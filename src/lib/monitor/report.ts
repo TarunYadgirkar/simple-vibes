@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_NOTE_CHARS } from "./diagnose";
 
 const MAX_REPORT_EVENTS = 500;
 
@@ -16,7 +17,7 @@ export const reportRequestSchema = z.object({
         deviationPct: z.number().finite().nullable(),
         amplitudePx: z.number().nonnegative().finite(),
         health: z.enum(["unknown", "healthy", "drift", "fault"]),
-        note: z.string().max(600).nullable(),
+        note: z.string().max(MAX_NOTE_CHARS).nullable(),
       }),
     )
     .min(1)

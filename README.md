@@ -10,7 +10,7 @@ Built at Agents after Dark, UC Berkeley, Nov 2026. Computer vision track.
 
 1. Drag a box around the part. Each frame, the box becomes a 1D profile of brightness edges. Cross-correlating it against a reference gives the displacement to a fraction of a pixel.
 2. The last 2.5 s of displacement is detrended, windowed and Fourier transformed. The strongest peak is the frequency. Peaks that don't clear the noise floor are dropped.
-3. One reading is saved as the baseline. Within 5% is healthy, 5 to 15% is drifting, past 15% is a fault.
+3. One reading is saved as the baseline. Under 5% change is healthy, 5% to under 15% is drifting, 15% or more is a fault.
 4. On drift, Claude gets the baseline photo and the current photo and writes what changed.
 5. The mic does the same for sound up to 24 kHz.
 6. Claude writes a report from the log.

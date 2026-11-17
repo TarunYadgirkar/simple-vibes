@@ -1,4 +1,4 @@
-import { diagnoseRequestSchema, JPEG_PREFIX } from "../../../lib/monitor/diagnose";
+import { diagnoseRequestSchema, JPEG_PREFIX, MAX_NOTE_CHARS } from "../../../lib/monitor/diagnose";
 import { askClaude, errorResponse, rejectUnusable } from "../../../lib/server/claude";
 
 const SYSTEM_PROMPT = `You are the on-watch agent for a camera-based vibration monitor running unattended.
@@ -35,7 +35,7 @@ export async function POST(request: Request): Promise<Response> {
       { type: "text", text: JSON.stringify({ assetName, baselineHz, hz, deviationPct }) },
     ]);
     if (note === "") return errorResponse("agent had nothing to say about this frame", 502);
-    return Response.json({ note });
+    return Response.json({ note: note.slice(0, MAX_NOTE_CHARS) });
   } catch (error: unknown) {
     console.error("diagnosis failed", error);
     return errorResponse("agent could not be reached for this reading", 502);

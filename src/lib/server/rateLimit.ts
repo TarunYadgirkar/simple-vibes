@@ -8,8 +8,14 @@ const recent = new Map<string, number[]>();
 export function isRateLimited(request: Request): boolean {
   const client = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
   const now = Date.now();
-  const hits = [...(recent.get(client) ?? []).filter((at) => now - at < WINDOW_MS), now];
-  if (recent.size >= MAX_TRACKED_CLIENTS && !recent.has(client)) recent.clear();
-  recent.set(client, hits);
-  return hits.length > MAX_REQUESTS_PER_WINDOW;
+  const hits = (recent.get(client) ?? []).filter((at) => now - at < WINDOW_MS);
+  if (hits.length >= MAX_REQUESTS_PER_WINDOW) return true;
+  if (recent.size >= MAX_TRACKED_CLIENTS && !recent.has(client)) {
+    for (const [key, times] of recent) {
+      if (now - times[times.length - 1] >= WINDOW_MS) recent.delete(key);
+    }
+    if (recent.size >= MAX_TRACKED_CLIENTS) return true;
+  }
+  recent.set(client, [...hits, now]);
+  return false;
 }
