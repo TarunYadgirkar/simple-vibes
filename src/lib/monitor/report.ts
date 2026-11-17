@@ -14,6 +14,7 @@ export const reportRequestSchema = z.object({
         deviationPct: z.number().finite().nullable(),
         amplitudePx: z.number().nonnegative().finite(),
         health: z.enum(["unknown", "healthy", "drift", "fault"]),
+        note: z.string().max(600).nullable(),
       }),
     )
     .min(1)

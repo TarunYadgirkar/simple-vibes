@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useReducer, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { CameraView } from "../components/CameraView";
 import { SpectrumChart, WaveChart } from "../components/charts";
 import { EventLog } from "../components/EventLog";
@@ -10,7 +10,8 @@ import { ReportPanel } from "../components/ReportPanel";
 import { Button, FIELD_CLASS, Panel } from "../components/ui";
 import { TEST_SOURCE, useVibrationMonitor, type Roi } from "../hooks/useVibrationMonitor";
 import type { Axis } from "../lib/dsp/motion";
-import { initialLog, logReducer, type Reading } from "../lib/monitor/log";
+import { fetchDiagnosis, LOOKING_NOTE } from "../lib/monitor/diagnose";
+import { classify, deviationPct, initialLog, logReducer, type Reading } from "../lib/monitor/log";
 import { TEST_PATTERN_HZ } from "../lib/sources/testPattern";
 
 const DEFAULT_ROI: Roi = { x: 0.35, y: 0.2, w: 0.3, h: 0.6 };
@@ -22,11 +23,33 @@ export default function Home() {
   const [source, setSource] = useState(DEFAULT_CAMERA);
   const [log, dispatch] = useReducer(logReducer, initialLog);
 
-  const handleReading = useCallback(
-    (reading: Reading) => dispatch({ type: "reading", reading }),
-    [],
-  );
+  const [assetName, setAssetName] = useState("Test cable");
+  const context = useRef({ log, assetName, capture: (): string | null => null });
+
+  const handleReading = useCallback((reading: Reading) => {
+    const { log: current, assetName: name, capture } = context.current;
+    const deviation = deviationPct(reading.hz, current.baseline);
+    const health = classify(deviation);
+    const hasChanged = health === "drift" || health === "fault";
+    const frameNow = hasChanged && current.baselineImage ? capture() : null;
+    dispatch({ type: "reading", reading, note: frameNow ? LOOKING_NOTE : null });
+    if (!frameNow || !current.baseline || !current.baselineImage || deviation === null) return;
+
+    void fetchDiagnosis({
+      assetName: name.trim() || "Watched part",
+      baselineHz: current.baseline.hz,
+      hz: reading.hz,
+      deviationPct: deviation,
+      baselineImage: current.baselineImage,
+      currentImage: frameNow,
+    }).then((note) => dispatch({ type: "note", id: reading.at, note }));
+  }, []);
   const monitor = useVibrationMonitor({ roi, axis, onReading: handleReading });
+  const { captureFrame } = monitor;
+
+  useEffect(() => {
+    context.current = { log, assetName, capture: captureFrame };
+  }, [log, assetName, captureFrame]);
   const isRunning = monitor.runState === "running";
   const { frame } = monitor;
 
@@ -93,7 +116,7 @@ export default function Home() {
             live={frame.live}
             last={log.last}
             baseline={log.baseline}
-            onSetBaseline={() => dispatch({ type: "setBaseline" })}
+            onSetBaseline={() => dispatch({ type: "setBaseline", image: captureFrame() })}
           />
           <Panel title="frequency spectrum (Hz)">
             <SpectrumChart
@@ -121,7 +144,12 @@ export default function Home() {
         <EventLog events={log.events} />
       </Panel>
 
-      <ReportPanel events={log.events} baselineHz={log.baseline?.hz ?? null} />
+      <ReportPanel
+        events={log.events}
+        baselineHz={log.baseline?.hz ?? null}
+        assetName={assetName}
+        onAssetNameChange={setAssetName}
+      />
     </main>
   );
 }

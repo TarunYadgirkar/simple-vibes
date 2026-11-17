@@ -8,6 +8,8 @@ import { Button, FIELD_CLASS, Panel } from "./ui";
 type Props = {
   events: LoggedEvent[];
   baselineHz: number | null;
+  assetName: string;
+  onAssetNameChange: (name: string) => void;
 };
 
 type ReportState =
@@ -18,8 +20,7 @@ type ReportState =
 
 const NETWORK_ERROR = "The report service did not respond. Check that the app is still running, then try again.";
 
-export function ReportPanel({ events, baselineHz }: Props) {
-  const [assetName, setAssetName] = useState("Test cable");
+export function ReportPanel({ events, baselineHz, assetName, onAssetNameChange }: Props) {
   const [state, setState] = useState<ReportState>({ status: "idle" });
 
   const handleWrite = async () => {
@@ -28,12 +29,13 @@ export function ReportPanel({ events, baselineHz }: Props) {
       assetName,
       baselineHz,
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      events: events.map(({ at, hz, deviationPct, amplitudePx, health }) => ({
+      events: events.map(({ at, hz, deviationPct, amplitudePx, health, note }) => ({
         at,
         hz,
         deviationPct,
         amplitudePx,
         health,
+        note,
       })),
     };
     try {
@@ -61,7 +63,7 @@ export function ReportPanel({ events, baselineHz }: Props) {
           <input
             value={assetName}
             maxLength={80}
-            onChange={(event) => setAssetName(event.target.value)}
+            onChange={(event) => onAssetNameChange(event.target.value)}
             className={`${FIELD_CLASS} w-64`}
           />
         </label>

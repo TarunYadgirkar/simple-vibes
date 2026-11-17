@@ -31,6 +31,8 @@ const REFERENCE_REFRESH_S = 3;
 const MAX_PROFILE_PX = 320;
 const MAX_LAG_FRACTION = 0.3;
 const MIN_BOX_PX = 8;
+const CAPTURE_WIDTH_PX = 640;
+const CAPTURE_QUALITY = 0.7;
 
 interface Engine {
   samples: Sample[];
@@ -215,6 +217,21 @@ export function useVibrationMonitor({ roi, axis, onReading }: Options) {
     [processFrame, stop],
   );
 
+  const captureFrame = useCallback((): string | null => {
+    const video = videoRef.current;
+    if (!video || video.videoWidth === 0) return null;
+    const shot = document.createElement("canvas");
+    shot.width = CAPTURE_WIDTH_PX;
+    shot.height = Math.round((CAPTURE_WIDTH_PX * video.videoHeight) / video.videoWidth);
+    const ctx = shot.getContext("2d")!;
+    ctx.drawImage(video, 0, 0, shot.width, shot.height);
+    const box = settings.current.roi;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(box.x * shot.width, box.y * shot.height, box.w * shot.width, box.h * shot.height);
+    return shot.toDataURL("image/jpeg", CAPTURE_QUALITY);
+  }, []);
+
   useEffect(
     () => () => {
       session.current += 1;
@@ -223,5 +240,5 @@ export function useVibrationMonitor({ roi, axis, onReading }: Options) {
     [],
   );
 
-  return { videoRef, frame, runState, error, cameras, start, stop };
+  return { videoRef, frame, runState, error, cameras, start, stop, captureFrame };
 }

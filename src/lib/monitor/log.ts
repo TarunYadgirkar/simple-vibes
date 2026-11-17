@@ -11,17 +11,20 @@ export interface LoggedEvent extends Reading {
   id: number;
   deviationPct: number | null;
   health: Health;
+  note: string | null;
 }
 
 export interface LogState {
   baseline: Reading | null;
+  baselineImage: string | null;
   last: Reading | null;
   events: LoggedEvent[];
 }
 
 export type LogAction =
-  | { type: "reading"; reading: Reading }
-  | { type: "setBaseline" }
+  | { type: "reading"; reading: Reading; note: string | null }
+  | { type: "note"; id: number; note: string }
+  | { type: "setBaseline"; image: string | null }
   | { type: "clear" };
 
 export const DRIFT_PCT = 5;
@@ -35,7 +38,7 @@ export const HEALTH_LABEL: Record<Health, string> = {
   fault: "Fault",
 };
 
-export const initialLog: LogState = { baseline: null, last: null, events: [] };
+export const initialLog: LogState = { baseline: null, baselineImage: null, last: null, events: [] };
 
 export function deviationPct(hz: number, baseline: Reading | null): number | null {
   return baseline ? ((hz - baseline.hz) / baseline.hz) * 100 : null;
@@ -50,7 +53,17 @@ export function classify(deviation: number | null): Health {
 
 export function logReducer(state: LogState, action: LogAction): LogState {
   if (action.type === "clear") return initialLog;
-  if (action.type === "setBaseline") return { ...state, baseline: state.last };
+  if (action.type === "setBaseline") {
+    return { ...state, baseline: state.last, baselineImage: action.image };
+  }
+  if (action.type === "note") {
+    return {
+      ...state,
+      events: state.events.map((event) =>
+        event.id === action.id ? { ...event, note: action.note } : event,
+      ),
+    };
+  }
 
   const deviation = deviationPct(action.reading.hz, state.baseline);
   const event: LoggedEvent = {
@@ -58,6 +71,7 @@ export function logReducer(state: LogState, action: LogAction): LogState {
     id: action.reading.at,
     deviationPct: deviation,
     health: classify(deviation),
+    note: action.note,
   };
   return {
     ...state,

@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type { LoggedEvent } from "../lib/monitor/log";
 import { formatDeviation, formatHz, HealthPill } from "./ui";
 
@@ -31,7 +32,8 @@ export function EventLog({ events }: { events: LoggedEvent[] }) {
         </thead>
         <tbody>
           {events.map((event) => (
-            <tr key={event.id} className="border-t border-line">
+            <Fragment key={event.id}>
+            <tr className="border-t border-line">
               <td className="py-1.5 pr-4">{TIME_FORMAT.format(event.at)}</td>
               <td className="py-1.5 pr-4">{formatHz(event.hz)} Hz</td>
               <td className="py-1.5 pr-4">{formatDeviation(event.deviationPct)}</td>
@@ -40,6 +42,15 @@ export function EventLog({ events }: { events: LoggedEvent[] }) {
                 <HealthPill health={event.health} />
               </td>
             </tr>
+            {event.note && (
+              <tr>
+                <td />
+                <td colSpan={4} className="max-w-[65ch] pb-2 text-ink-muted">
+                  agent: {event.note}
+                </td>
+              </tr>
+            )}
+            </Fragment>
           ))}
         </tbody>
       </table>
