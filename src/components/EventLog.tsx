@@ -53,7 +53,7 @@ export function EventLog({ events }: { events: LoggedEvent[] }) {
               <tr>
                 <td />
                 <td colSpan={5} className="max-w-[65ch] pb-2 text-ink-muted">
-                  agent: {event.note}
+                  {event.kind === "vibration" ? `agent: ${event.note}` : event.note}
                 </td>
               </tr>
             )}

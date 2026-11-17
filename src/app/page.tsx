@@ -30,12 +30,15 @@ export default function Home() {
 
   const [assetName, setAssetName] = useState("Test cable");
   const context = useRef({ log, assetName, capture: (): string | null => null });
+  const lastHealth = useRef<string>("unknown");
 
   const handleReading = useCallback((reading: Reading) => {
     const { log: current, assetName: name, capture } = context.current;
     const deviation = deviationPct(reading.hz, current.baseline);
     const health = classify(deviation);
-    const hasChanged = health === "drift" || health === "fault";
+    // Ask the agent once when the state turns bad, not on every reading while it stays bad.
+    const hasChanged = (health === "drift" || health === "fault") && health !== lastHealth.current;
+    lastHealth.current = health;
     const frameNow = hasChanged && current.baselineImage ? capture() : null;
     dispatch({ type: "reading", reading, note: frameNow ? LOOKING_NOTE : null });
     sendTelemetry("event", { what: "camera reading", ...reading, deviation, health });

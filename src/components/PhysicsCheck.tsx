@@ -21,7 +21,7 @@ const INPUT_CLASS = `${FIELD_CLASS} w-full`;
 export function PhysicsCheck({ baseline, last }: Props) {
   const [model, setModel] = useState<ModelId>("string");
   const [baseLength, setBaseLength] = useState("60");
-  const [newLength, setNewLength] = useState("45");
+  const [newLength, setNewLength] = useState("60");
 
   const from = Number(baseLength);
   const to = Number(newLength);

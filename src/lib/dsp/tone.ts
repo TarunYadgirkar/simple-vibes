@@ -56,6 +56,7 @@ const HUM_STEP_HZ = 1;
 const HUM_HARMONICS = 8;
 const HUM_ANALYSIS_MAX_HZ = 4000;
 const HUM_PROMINENCE_DB = 12;
+const HUM_MIN_LEVEL_DB = -85;
 const HUM_MIN_HARMONICS = 4;
 const HUM_TOLERANCE = 0.015;
 const FLOOR_BLOCK_BINS = 32;
@@ -93,7 +94,7 @@ export function findHum(bins: Float32Array, binHz: number): HumEstimate | null {
     let topBin = 0;
     for (let k = 1; k <= HUM_HARMONICS && k * f0 <= HUM_ANALYSIS_MAX_HZ; k++) {
       const { bin, prominence } = peakNear(k * f0);
-      if (prominence < HUM_PROMINENCE_DB) continue;
+      if (prominence < HUM_PROMINENCE_DB || bins[bin] < HUM_MIN_LEVEL_DB) continue;
       count += 1;
       topHarmonic = k;
       topBin = bin;

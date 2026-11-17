@@ -43,7 +43,7 @@ export function Button({ variant = "quiet", className = "", children, ...props }
 }
 
 export const FIELD_CLASS =
-  "h-9 border-b border-ink-muted bg-transparent text-ink tabular-nums hover:border-ink-muted";
+  "h-9 max-w-64 truncate border-b border-ink-muted bg-transparent text-ink tabular-nums hover:border-ink-muted";
 
 const HEALTH_STYLE: Record<Health, string> = {
   unknown: "text-ink-muted",
