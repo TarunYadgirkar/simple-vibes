@@ -16,7 +16,7 @@ export interface Spectrum {
 }
 
 const MIN_SAMPLES = 24;
-const MIN_HZ = 1;
+const MIN_HZ = 2;
 const PAD_FACTOR = 8;
 
 function resample(samples: Sample[], count: number): Float64Array {

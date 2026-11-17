@@ -31,6 +31,7 @@ const REFERENCE_REFRESH_S = 3;
 const MAX_PROFILE_PX = 320;
 const MAX_LAG_FRACTION = 0.3;
 const MIN_BOX_PX = 8;
+const STEADY_TOLERANCE = 0.08;
 const CAPTURE_WIDTH_PX = 640;
 const CAPTURE_QUALITY = 0.7;
 
@@ -42,6 +43,7 @@ interface Engine {
   lastT: number;
   pending: Reading | null;
   pendingSince: number;
+  lastPeakHz: number;
 }
 
 const freshEngine = (): Engine => ({
@@ -52,6 +54,7 @@ const freshEngine = (): Engine => ({
   lastT: -1,
   pending: null,
   pendingSince: 0,
+  lastPeakHz: 0,
 });
 
 const EMPTY_FRAME: MonitorFrame = { wave: [], spectrum: null, live: null };
@@ -129,8 +132,14 @@ export function useVibrationMonitor({ roi, axis, onReading }: Options) {
     if (state.frames % ANALYZE_EVERY_FRAMES !== 0) return;
 
     const spectrum = analyze(state.samples);
-    const isLocked =
+    const hasPeak =
       spectrum !== null && spectrum.snr >= SNR_LOCK && spectrum.amplitude >= MIN_AMPLITUDE_PX;
+    // A person shifting in the box gives one-off peaks. A real vibration holds its frequency between looks.
+    const isLocked =
+      hasPeak &&
+      state.lastPeakHz > 0 &&
+      Math.abs(spectrum.peakHz - state.lastPeakHz) / state.lastPeakHz <= STEADY_TOLERANCE;
+    state.lastPeakHz = hasPeak ? spectrum.peakHz : 0;
     const live: Reading | null = isLocked
       ? { hz: spectrum.peakHz, snr: spectrum.snr, amplitudePx: spectrum.amplitude, at: Date.now() }
       : null;
