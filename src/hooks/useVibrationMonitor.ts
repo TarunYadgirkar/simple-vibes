@@ -65,6 +65,7 @@ export function useVibrationMonitor({ roi, axis, onReading }: Options) {
   const engine = useRef<Engine>(freshEngine());
   const canvas = useRef<HTMLCanvasElement | null>(null);
   const stopSource = useRef<() => void>(() => {});
+  const session = useRef(0);
   const settings = useRef({ roi, axis, onReading });
   const [frame, setFrame] = useState<MonitorFrame>(EMPTY_FRAME);
   const [runState, setRunState] = useState<RunState>("idle");
@@ -150,6 +151,7 @@ export function useVibrationMonitor({ roi, axis, onReading }: Options) {
   }, []);
 
   const stop = useCallback(() => {
+    session.current += 1;
     stopSource.current();
     stopSource.current = () => {};
     if (videoRef.current) videoRef.current.srcObject = null;
@@ -163,14 +165,17 @@ export function useVibrationMonitor({ roi, axis, onReading }: Options) {
       const video = videoRef.current;
       if (!video) return;
       stop();
+      const id = session.current;
+      const isStale = () => id !== session.current;
       setRunState("starting");
       setError(null);
 
+      let release = () => {};
       try {
         if (source === TEST_SOURCE) {
           const pattern = createTestPattern();
+          release = pattern.stop;
           video.srcObject = pattern.stream;
-          stopSource.current = pattern.stop;
         } else {
           const stream = await navigator.mediaDevices.getUserMedia({
             audio: false,
@@ -181,26 +186,26 @@ export function useVibrationMonitor({ roi, axis, onReading }: Options) {
               frameRate: { ideal: 60 },
             },
           });
+          release = () => stream.getTracks().forEach((track) => track.stop());
+          if (isStale()) return release();
           video.srcObject = stream;
-          stopSource.current = () => stream.getTracks().forEach((track) => track.stop());
           const devices = await navigator.mediaDevices.enumerateDevices();
+          if (isStale()) return release();
           setCameras(devices.filter((device) => device.kind === "videoinput"));
         }
         await video.play();
       } catch {
+        release();
+        if (isStale()) return;
         setError("Camera access was blocked. Allow the camera for this page, then press Start again.");
         setRunState("error");
         return;
       }
+      if (isStale()) return release();
 
-      let active = true;
-      const previousStop = stopSource.current;
-      stopSource.current = () => {
-        active = false;
-        previousStop();
-      };
+      stopSource.current = release;
       const onFrame: VideoFrameRequestCallback = (_now, meta) => {
-        if (!active) return;
+        if (isStale()) return;
         processFrame(video, meta.mediaTime);
         video.requestVideoFrameCallback(onFrame);
       };
@@ -210,7 +215,13 @@ export function useVibrationMonitor({ roi, axis, onReading }: Options) {
     [processFrame, stop],
   );
 
-  useEffect(() => () => stopSource.current(), []);
+  useEffect(
+    () => () => {
+      session.current += 1;
+      stopSource.current();
+    },
+    [],
+  );
 
   return { videoRef, frame, runState, error, cameras, start, stop };
 }

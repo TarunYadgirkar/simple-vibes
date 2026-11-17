@@ -34,7 +34,7 @@ export default function Home() {
 
   const handleSourceChange = (next: string) => {
     setSource(next);
-    if (isRunning) void monitor.start(next);
+    if (monitor.runState !== "idle") void monitor.start(next);
   };
 
   return (
