@@ -1,26 +1,50 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --surface: #edf0f2;
+  --panel: #ffffff;
+  --ink: #12222b;
+  --ink-muted: #5b6b74;
+  --line: #d5dce0;
+  --accent: #0a7c86;
+  --accent-ink: #ffffff;
+  --good: #2f8f5b;
+  --warn: #b7791f;
+  --crit: #c2382f;
+  --trace-ref: #9aa7ae;
+  --shadow-panel: 0 1px 2px rgb(18 34 43 / 0.06), 0 6px 20px rgb(18 34 43 / 0.06);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-surface: var(--surface);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-crit: var(--crit);
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
+  --font-display: var(--font-big-shoulders);
+  --shadow-panel: var(--shadow-panel);
+  --radius-panel: 14px;
+  --radius-control: 8px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+h1,
+h2 {
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

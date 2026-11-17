@@ -1,69 +1,133 @@
-import Image from "next/image";
+"use client";
+
+import { useCallback, useReducer, useState } from "react";
+import { Play, Stop } from "@phosphor-icons/react";
+import { CameraView } from "../components/CameraView";
+import { SpectrumChart, WaveChart } from "../components/charts";
+import { EventLog } from "../components/EventLog";
+import { PhysicsCheck } from "../components/PhysicsCheck";
+import { Readout } from "../components/Readout";
+import { ReportPanel } from "../components/ReportPanel";
+import { Button, Panel } from "../components/ui";
+import { TEST_SOURCE, useVibrationMonitor, type Roi } from "../hooks/useVibrationMonitor";
+import type { Axis } from "../lib/dsp/motion";
+import { initialLog, logReducer, type Reading } from "../lib/monitor/log";
+import { TEST_PATTERN_HZ } from "../lib/sources/testPattern";
+
+const DEFAULT_ROI: Roi = { x: 0.35, y: 0.2, w: 0.3, h: 0.6 };
+const DEFAULT_CAMERA = "";
+const SELECT_CLASS = "h-9 rounded-control bg-panel px-2 text-sm text-ink shadow-panel";
 
 export default function Home() {
+  const [roi, setRoi] = useState(DEFAULT_ROI);
+  const [axis, setAxis] = useState<Axis>("vertical");
+  const [source, setSource] = useState(DEFAULT_CAMERA);
+  const [log, dispatch] = useReducer(logReducer, initialLog);
+
+  const handleReading = useCallback(
+    (reading: Reading) => dispatch({ type: "reading", reading }),
+    [],
+  );
+  const monitor = useVibrationMonitor({ roi, axis, onReading: handleReading });
+  const isRunning = monitor.runState === "running";
+  const { frame } = monitor;
+
+  const handleSourceChange = (next: string) => {
+    setSource(next);
+    if (isRunning) void monitor.start(next);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 sm:p-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl leading-none">Simple Vibes</h1>
+          <p className="text-sm text-ink-muted">
+            Reads how fast something vibrates from an ordinary camera, and flags when that changes.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-2 text-xs text-ink-muted">
+            Source
+            <select value={source} onChange={(event) => handleSourceChange(event.target.value)} className={SELECT_CLASS}>
+              <option value={DEFAULT_CAMERA}>Default camera</option>
+              {monitor.cameras.map((camera) => (
+                <option key={camera.deviceId} value={camera.deviceId}>
+                  {camera.label || "Camera"}
+                </option>
+              ))}
+              <option value={TEST_SOURCE}>Test string ({TEST_PATTERN_HZ} Hz)</option>
+            </select>
+          </label>
+          <label className="flex items-center gap-2 text-xs text-ink-muted">
+            Motion
+            <select value={axis} onChange={(event) => setAxis(event.target.value as Axis)} className={SELECT_CLASS}>
+              <option value="vertical">Up and down</option>
+              <option value="horizontal">Side to side</option>
+            </select>
+          </label>
+          {isRunning ? (
+            <Button onClick={monitor.stop}>
+              <Stop size={16} weight="fill" />
+              Stop
+            </Button>
+          ) : (
+            <Button variant="primary" onClick={() => void monitor.start(source)} disabled={monitor.runState === "starting"}>
+              <Play size={16} weight="fill" />
+              Start
+            </Button>
+          )}
         </div>
-      </main>
-    </div>
+      </header>
+
+      {monitor.error && (
+        <p role="alert" className="rounded-control bg-crit/12 px-3 py-2 text-sm text-crit">
+          {monitor.error}
+        </p>
+      )}
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="flex flex-col gap-4">
+          <Panel>
+            <CameraView videoRef={monitor.videoRef} roi={roi} onRoiChange={setRoi} isRunning={isRunning} />
+            <WaveChart wave={frame.wave} />
+          </Panel>
+          <PhysicsCheck baseline={log.baseline} last={log.last} />
+        </div>
+        <div className="flex flex-col gap-4">
+          <Readout
+            live={frame.live}
+            last={log.last}
+            baseline={log.baseline}
+            onSetBaseline={() => dispatch({ type: "setBaseline" })}
+          />
+          <Panel title="Frequency spectrum (Hz)">
+            <SpectrumChart
+              spectrum={frame.spectrum}
+              baselineHz={log.baseline?.hz ?? null}
+              markerHz={frame.live?.hz ?? null}
+            />
+            <p className="text-xs text-ink-muted">
+              {frame.spectrum
+                ? `Camera is delivering ${frame.spectrum.sampleRate.toFixed(0)} frames per second, so it can read up to ${(frame.spectrum.sampleRate / 2).toFixed(0)} Hz.`
+                : "The dashed line marks the healthy baseline once you save one."}
+            </p>
+          </Panel>
+        </div>
+      </div>
+
+      <Panel
+        title="Watch log"
+        action={
+          <Button onClick={() => dispatch({ type: "clear" })} disabled={log.events.length === 0}>
+            Clear log and baseline
+          </Button>
+        }
+      >
+        <EventLog events={log.events} />
+      </Panel>
+
+      <ReportPanel events={log.events} baselineHz={log.baseline?.hz ?? null} />
+    </main>
   );
 }
