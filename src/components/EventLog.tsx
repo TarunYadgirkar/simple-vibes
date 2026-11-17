@@ -13,7 +13,7 @@ export function EventLog({ events }: { events: LoggedEvent[] }) {
   if (events.length === 0) {
     return (
       <p className="text-ink-muted">
-        Every vibration the camera reads is logged here with its frequency and how far it sits from the baseline.
+        Every vibration the camera reads and every tone the microphone hears is logged here with its frequency.
       </p>
     );
   }
@@ -24,9 +24,10 @@ export function EventLog({ events }: { events: LoggedEvent[] }) {
         <thead className="sticky top-0 bg-page text-ink-muted">
           <tr>
             <th className="py-1.5 pr-4 font-normal">time</th>
+            <th className="py-1.5 pr-4 font-normal">sensor</th>
             <th className="py-1.5 pr-4 font-normal">frequency</th>
             <th className="py-1.5 pr-4 font-normal">change</th>
-            <th className="py-1.5 pr-4 font-normal">movement</th>
+            <th className="py-1.5 pr-4 font-normal">strength</th>
             <th className="py-1.5 font-normal">state</th>
           </tr>
         </thead>
@@ -35,17 +36,20 @@ export function EventLog({ events }: { events: LoggedEvent[] }) {
             <Fragment key={event.id}>
             <tr className="border-t border-line">
               <td className="py-1.5 pr-4">{TIME_FORMAT.format(event.at)}</td>
+              <td className="py-1.5 pr-4">{event.sensor}</td>
               <td className="py-1.5 pr-4">{formatHz(event.hz)} Hz</td>
               <td className="py-1.5 pr-4">{formatDeviation(event.deviationPct)}</td>
-              <td className="py-1.5 pr-4">{event.amplitudePx.toFixed(1)} px</td>
+              <td className="py-1.5 pr-4">
+                {event.levelDb === null ? `${event.amplitudePx.toFixed(1)} px` : `${event.levelDb.toFixed(0)} dB`}
+              </td>
               <td className="py-1.5">
-                <HealthPill health={event.health} />
+                {event.sensor === "mic" ? "heard" : <HealthPill health={event.health} />}
               </td>
             </tr>
             {event.note && (
               <tr>
                 <td />
-                <td colSpan={4} className="max-w-[65ch] pb-2 text-ink-muted">
+                <td colSpan={5} className="max-w-[65ch] pb-2 text-ink-muted">
                   agent: {event.note}
                 </td>
               </tr>

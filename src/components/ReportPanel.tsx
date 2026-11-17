@@ -29,8 +29,10 @@ export function ReportPanel({ events, baselineHz, assetName, onAssetNameChange }
       assetName,
       baselineHz,
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      events: events.map(({ at, hz, deviationPct, amplitudePx, health, note }) => ({
+      events: events.map(({ at, sensor, levelDb, hz, deviationPct, amplitudePx, health, note }) => ({
         at,
+        sensor,
+        levelDb,
         hz,
         deviationPct,
         amplitudePx,

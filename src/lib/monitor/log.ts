@@ -7,8 +7,12 @@ export interface Reading {
 
 export type Health = "unknown" | "healthy" | "drift" | "fault";
 
+export type Sensor = "camera" | "mic";
+
 export interface LoggedEvent extends Reading {
   id: number;
+  sensor: Sensor;
+  levelDb: number | null;
   deviationPct: number | null;
   health: Health;
   note: string | null;
@@ -23,6 +27,7 @@ export interface LogState {
 
 export type LogAction =
   | { type: "reading"; reading: Reading; note: string | null }
+  | { type: "tone"; hz: number; levelDb: number; snrDb: number; at: number }
   | { type: "note"; id: number; note: string }
   | { type: "setBaseline"; image: string | null }
   | { type: "clear" };
@@ -65,10 +70,28 @@ export function logReducer(state: LogState, action: LogAction): LogState {
     };
   }
 
+  if (action.type === "tone") {
+    const heard: LoggedEvent = {
+      id: action.at,
+      sensor: "mic",
+      hz: action.hz,
+      snr: action.snrDb,
+      amplitudePx: 0,
+      levelDb: action.levelDb,
+      at: action.at,
+      deviationPct: null,
+      health: "unknown",
+      note: null,
+    };
+    return { ...state, events: [heard, ...state.events].slice(0, MAX_EVENTS) };
+  }
+
   const deviation = deviationPct(action.reading.hz, state.baseline);
   const event: LoggedEvent = {
     ...action.reading,
     id: action.reading.at,
+    sensor: "camera",
+    levelDb: null,
     deviationPct: deviation,
     health: classify(deviation),
     note: action.note,
