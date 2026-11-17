@@ -75,69 +75,101 @@ export function useToneListener({ minHz, onTone, onHumStart, onHumEnd }: Options
         audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
       });
     } catch {
+      if (id !== session.current) return;
       setError("Microphone access was blocked. Allow the microphone for this page, then press listen again.");
       return;
     }
-    const stopTracks = () => stream.getTracks().forEach((track) => track.stop());
+    let tracksStopped = false;
+    const stopTracks = () => {
+      if (tracksStopped) return;
+      tracksStopped = true;
+      stream.getTracks().forEach((track) => track.stop());
+    };
     if (id !== session.current) return stopTracks();
 
-    const audio = new AudioContext();
-    const analyser = audio.createAnalyser();
-    analyser.fftSize = FFT_SIZE;
-    analyser.smoothingTimeConstant = SMOOTHING;
-    audio.createMediaStreamSource(stream).connect(analyser);
-    const bins = new Float32Array(analyser.frequencyBinCount);
-    const binHz = audio.sampleRate / FFT_SIZE;
-    let pending: Tone | null = null;
-    let pendingSince = 0;
-    let humPitch = 0;
-    let humRun = 0;
-    let humMisses = 0;
+    let audio: AudioContext | null = null;
+    let timer: ReturnType<typeof setInterval> | null = null;
     let activeHum: Hum | null = null;
-
-    const timer = setInterval(() => {
-      analyser.getFloatFrequencyData(bins);
-      const estimate = findTone(bins, binHz, settings.current.minHz);
-      const now = Date.now();
-      const tone = estimate ? { ...estimate, at: now } : null;
-      if (tone && (!pending || tone.snrDb > pending.snrDb)) {
-        if (!pending) pendingSince = now;
-        pending = tone;
-      }
-      if (pending && (!tone || now - pendingSince > COMMIT_AFTER_MS)) {
-        settings.current.onTone(pending);
-        pending = null;
-      }
-      // Speech also has overtones, but its pitch wanders. Only a pitch that holds steady counts as a hum.
-      const hum = findHum(bins, binHz);
-      const holdsPitch = hum !== null && (humRun === 0 || Math.abs(hum.hz - humPitch) / humPitch <= HUM_PITCH_TOLERANCE);
-      if (hum && holdsPitch) {
-        humPitch = humRun === 0 ? hum.hz : humPitch * 0.8 + hum.hz * 0.2;
-        humRun += 1;
-        humMisses = 0;
-      } else {
-        humMisses += 1;
-        if (humMisses > HUM_MAX_MISSES) humRun = 0;
-      }
-      if (!activeHum && hum && humRun >= HUM_STABLE_POLLS) {
-        activeHum = { id: now, hz: humPitch, harmonics: hum.harmonics };
-        settings.current.onHumStart(activeHum);
-      } else if (activeHum && humRun === 0) {
-        settings.current.onHumEnd(activeHum.id, (now - activeHum.id) / 1000);
-        activeHum = null;
-      } else if (activeHum && hum && holdsPitch) {
-        activeHum = { ...activeHum, hz: humPitch, harmonics: hum.harmonics };
-      }
-
-      setFrame({ tone, hum: activeHum, plot: toPlotPoints(bins, PLOT_POINTS), maxHz: audio.sampleRate / 2 });
-    }, POLL_MS);
-
-    release.current = () => {
-      clearInterval(timer);
+    const cleanup = () => {
+      if (timer !== null) clearInterval(timer);
+      timer = null;
       stopTracks();
-      void audio.close();
+      if (audio) {
+        void audio.close();
+        audio = null;
+      }
+      if (activeHum) {
+        settings.current.onHumEnd(activeHum.id, (Date.now() - activeHum.id) / 1000);
+        activeHum = null;
+      }
     };
-    setIsListening(true);
+    release.current = cleanup;
+
+    try {
+      const context = new AudioContext();
+      audio = context;
+      const analyser = context.createAnalyser();
+      analyser.fftSize = FFT_SIZE;
+      analyser.smoothingTimeConstant = SMOOTHING;
+      context.createMediaStreamSource(stream).connect(analyser);
+      if (context.state === "suspended") await context.resume();
+      if (id !== session.current) return cleanup();
+      const bins = new Float32Array(analyser.frequencyBinCount);
+      const binHz = context.sampleRate / FFT_SIZE;
+      let pending: Tone | null = null;
+      let pendingSince = 0;
+      let pendingMinHz = settings.current.minHz;
+      let humPitch = 0;
+      let humRun = 0;
+      let humMisses = 0;
+
+      timer = setInterval(() => {
+        if (pendingMinHz !== settings.current.minHz) {
+          pending = null;
+          pendingMinHz = settings.current.minHz;
+        }
+        analyser.getFloatFrequencyData(bins);
+        const estimate = findTone(bins, binHz, settings.current.minHz);
+        const now = Date.now();
+        const tone = estimate ? { ...estimate, at: now } : null;
+        if (tone && (!pending || tone.snrDb > pending.snrDb)) {
+          if (!pending) pendingSince = now;
+          pending = tone;
+        }
+        if (pending && (!tone || now - pendingSince > COMMIT_AFTER_MS)) {
+          settings.current.onTone(pending);
+          pending = null;
+        }
+        // Speech also has overtones, but its pitch wanders. Only a pitch that holds steady counts as a hum.
+        const hum = findHum(bins, binHz);
+        const holdsPitch = hum !== null && (humRun === 0 || Math.abs(hum.hz - humPitch) / humPitch <= HUM_PITCH_TOLERANCE);
+        if (hum && holdsPitch) {
+          humPitch = humRun === 0 ? hum.hz : humPitch * 0.8 + hum.hz * 0.2;
+          humRun += 1;
+          humMisses = 0;
+        } else {
+          humMisses += 1;
+          if (humMisses > HUM_MAX_MISSES) humRun = 0;
+        }
+        if (!activeHum && hum && humRun >= HUM_STABLE_POLLS) {
+          activeHum = { id: now, hz: humPitch, harmonics: hum.harmonics };
+          settings.current.onHumStart(activeHum);
+        } else if (activeHum && humRun === 0) {
+          settings.current.onHumEnd(activeHum.id, (now - activeHum.id) / 1000);
+          activeHum = null;
+        } else if (activeHum && hum && holdsPitch) {
+          activeHum = { ...activeHum, hz: humPitch, harmonics: hum.harmonics };
+        }
+
+        setFrame({ tone, hum: activeHum, plot: toPlotPoints(bins, PLOT_POINTS), maxHz: context.sampleRate / 2 });
+      }, POLL_MS);
+      setIsListening(true);
+    } catch {
+      cleanup();
+      if (id !== session.current) return;
+      release.current = () => {};
+      setError("Microphone could not start. Check microphone permission, then press listen again.");
+    }
   }, [stop]);
 
   useEffect(

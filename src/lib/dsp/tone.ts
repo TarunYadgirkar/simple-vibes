@@ -19,7 +19,8 @@ export function findTone(bins: Float32Array, binHz: number, minHz: number): Tone
   }
   if (sampled.length === 0) return null;
 
-  const floor = sampled.sort((a, b) => a - b)[sampled.length >> 1];
+  const sampledFloor = sampled.sort((a, b) => a - b)[sampled.length >> 1];
+  const floor = Number.isFinite(sampledFloor) ? sampledFloor : PLOT_FLOOR_DB;
   const snrDb = bins[peak] - floor;
   if (snrDb < SNR_LOCK_DB || bins[peak] < MIN_LEVEL_DB) return null;
 
@@ -27,7 +28,7 @@ export function findTone(bins: Float32Array, binHz: number, minHz: number): Tone
   const centre = bins[peak];
   const right = bins[peak + 1];
   const curvature = left - 2 * centre + right;
-  const offset = curvature === 0 ? 0 : (0.5 * (left - right)) / curvature;
+  const offset = !Number.isFinite(curvature) || curvature === 0 ? 0 : (0.5 * (left - right)) / curvature;
   return { hz: (peak + offset) * binHz, levelDb: centre, snrDb };
 }
 
@@ -109,6 +110,6 @@ export function findHum(bins: Float32Array, binHz: number): HumEstimate | null {
   const centre = bins[best.topBin];
   const right = bins[best.topBin + 1];
   const curvature = left - 2 * centre + right;
-  const offset = curvature === 0 ? 0 : (0.5 * (left - right)) / curvature;
+  const offset = !Number.isFinite(curvature) || curvature === 0 ? 0 : (0.5 * (left - right)) / curvature;
   return { hz: ((best.topBin + offset) * binHz) / best.topHarmonic, harmonics: best.count };
 }
