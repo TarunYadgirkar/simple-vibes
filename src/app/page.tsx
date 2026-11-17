@@ -9,7 +9,7 @@ import { Readout } from "../components/Readout";
 import { ReportPanel } from "../components/ReportPanel";
 import { SOUND_BANDS, SoundPanel } from "../components/SoundPanel";
 import { Button, FIELD_CLASS, Panel } from "../components/ui";
-import { useToneListener, type Tone } from "../hooks/useToneListener";
+import { useToneListener, type Hum, type Tone } from "../hooks/useToneListener";
 import { TEST_SOURCE, useVibrationMonitor, type Roi } from "../hooks/useVibrationMonitor";
 import type { Axis } from "../lib/dsp/motion";
 import { fetchDiagnosis, LOOKING_NOTE } from "../lib/monitor/diagnose";
@@ -61,7 +61,15 @@ export default function Home() {
     dispatch({ type: "tone", ...tone });
     sendTelemetry("event", { what: "mic tone", ...tone });
   }, []);
-  const sound = useToneListener({ minHz, onTone: handleTone });
+  const handleHumStart = useCallback((hum: Hum) => {
+    dispatch({ type: "hum", ...hum });
+    sendTelemetry("event", { what: "hum started", ...hum });
+  }, []);
+  const handleHumEnd = useCallback((id: number, seconds: number) => {
+    dispatch({ type: "note", id, note: `steady hum, lasted ${seconds.toFixed(0)} s` });
+    sendTelemetry("event", { what: "hum ended", id, seconds });
+  }, []);
+  const sound = useToneListener({ minHz, onTone: handleTone, onHumStart: handleHumStart, onHumEnd: handleHumEnd });
   const monitor = useVibrationMonitor({ roi, axis, onReading: handleReading });
   const { captureFrame } = monitor;
 
@@ -86,7 +94,7 @@ export default function Home() {
         movementPx: frame.spectrum?.amplitude ?? null,
         isLocked: frame.live !== null,
       },
-      mic: { isListening: sound.isListening, error: sound.error, minHz, tone: sound.frame.tone },
+      mic: { isListening: sound.isListening, error: sound.error, minHz, tone: sound.frame.tone, hum: sound.frame.hum },
       baselineHz: log.baseline?.hz ?? null,
       eventCount: log.events.length,
     };

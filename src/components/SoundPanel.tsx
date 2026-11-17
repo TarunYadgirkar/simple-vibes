@@ -74,6 +74,10 @@ export function SoundPanel({ isListening, frame, lastTone, error, minHz, onMinHz
             <dd>{shown ? `${shown.levelDb.toFixed(0)} dB` : "n/a"}</dd>
             <dt className="text-ink-muted">above noise</dt>
             <dd>{shown ? `${shown.snrDb.toFixed(0)} dB` : "n/a"}</dd>
+            <dt className="text-ink-muted">engine-like hum</dt>
+            <dd className={frame.hum ? "font-medium text-warn" : ""}>
+              {frame.hum ? `${frame.hum.hz.toFixed(0)} Hz, ${frame.hum.harmonics} overtones` : "none"}
+            </dd>
             <dt className="text-ink-muted">to people</dt>
             <dd>
               {!shown

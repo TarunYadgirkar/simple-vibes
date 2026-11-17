@@ -36,9 +36,10 @@ export function ReportPanel({ events, baselineHz, assetName, onAssetNameChange }
     const body: ReportRequest = {
       assetName,
       baselineHz,
-      events: events.map(({ at, sensor, levelDb, hz, deviationPct, amplitudePx, health, note }) => ({
+      events: events.map(({ at, sensor, kind, levelDb, hz, deviationPct, amplitudePx, health, note }) => ({
         time: TIME_FORMAT.format(at),
         sensor,
+        kind,
         levelDb,
         hz,
         deviationPct,

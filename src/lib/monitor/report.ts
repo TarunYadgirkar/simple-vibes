@@ -10,6 +10,7 @@ export const reportRequestSchema = z.object({
       z.object({
         time: z.string().min(1).max(40),
         sensor: z.enum(["camera", "mic"]),
+        kind: z.enum(["vibration", "tone", "hum"]),
         levelDb: z.number().finite().nullable(),
         hz: z.number().positive().finite(),
         deviationPct: z.number().finite().nullable(),

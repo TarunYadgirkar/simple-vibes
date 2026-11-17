@@ -8,10 +8,12 @@ export interface Reading {
 export type Health = "unknown" | "healthy" | "drift" | "fault";
 
 export type Sensor = "camera" | "mic";
+export type EventKind = "vibration" | "tone" | "hum";
 
 export interface LoggedEvent extends Reading {
   id: number;
   sensor: Sensor;
+  kind: EventKind;
   levelDb: number | null;
   deviationPct: number | null;
   health: Health;
@@ -28,6 +30,7 @@ export interface LogState {
 export type LogAction =
   | { type: "reading"; reading: Reading; note: string | null }
   | { type: "tone"; hz: number; levelDb: number; snrDb: number; at: number }
+  | { type: "hum"; id: number; hz: number; harmonics: number }
   | { type: "note"; id: number; note: string }
   | { type: "setBaseline"; image: string | null }
   | { type: "clear" };
@@ -70,10 +73,28 @@ export function logReducer(state: LogState, action: LogAction): LogState {
     };
   }
 
+  if (action.type === "hum") {
+    const hum: LoggedEvent = {
+      id: action.id,
+      sensor: "mic",
+      kind: "hum",
+      hz: action.hz,
+      snr: 0,
+      amplitudePx: 0,
+      levelDb: null,
+      at: action.id,
+      deviationPct: null,
+      health: "unknown",
+      note: `steady hum with ${action.harmonics} overtones, still going`,
+    };
+    return { ...state, events: [hum, ...state.events].slice(0, MAX_EVENTS) };
+  }
+
   if (action.type === "tone") {
     const heard: LoggedEvent = {
       id: action.at,
       sensor: "mic",
+      kind: "tone",
       hz: action.hz,
       snr: action.snrDb,
       amplitudePx: 0,
@@ -91,6 +112,7 @@ export function logReducer(state: LogState, action: LogAction): LogState {
     ...action.reading,
     id: action.reading.at,
     sensor: "camera",
+    kind: "vibration",
     levelDb: null,
     deviationPct: deviation,
     health: classify(deviation),
