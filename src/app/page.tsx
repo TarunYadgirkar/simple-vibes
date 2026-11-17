@@ -59,10 +59,10 @@ export default function Home() {
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-5 py-8">
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-5 py-8">
       <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <div>
-          <h1 className="font-medium">simple vibes</h1>
+          <h1 className="text-2xl font-medium">simple vibes</h1>
           <p className="text-ink-muted">
             Reads how fast something vibrates from an ordinary camera, and flags when that changes.
           </p>

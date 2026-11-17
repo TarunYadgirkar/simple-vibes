@@ -24,12 +24,12 @@ export function Readout({ live, last, baseline, onSetBaseline }: Props) {
         <HealthPill health={classify(deviation)} />
       </p>
       <p className={`flex items-baseline gap-3 leading-none ${live ? "text-ink" : "text-ink-muted"}`}>
-        <span className="text-[6.5rem] font-medium tracking-tighter tabular-nums">
+        <span className="text-[8rem] font-medium tracking-tighter tabular-nums">
           {shown ? formatHz(shown.hz) : "0.00"}
         </span>
-        <span className="text-2xl">Hz</span>
+        <span className="text-4xl">Hz</span>
       </p>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-6 tabular-nums">
+      <dl className="grid grid-cols-[auto_1fr] gap-x-6 text-lg tabular-nums">
         <dt className="text-ink-muted">change from baseline</dt>
         <dd>{formatDeviation(deviation)}</dd>
         <dt className="text-ink-muted">healthy baseline</dt>

@@ -36,7 +36,7 @@ export function WaveChart({ wave }: { wave: number[] }) {
 
     const span = Math.max(MIN_WAVE_SPAN_PX, ...wave.map(Math.abs));
     ctx.strokeStyle = color("--ink");
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 2;
     ctx.beginPath();
     wave.forEach((value, i) => {
       const x = (i / (wave.length - 1)) * width;
@@ -46,7 +46,7 @@ export function WaveChart({ wave }: { wave: number[] }) {
     });
     ctx.stroke();
   });
-  return <canvas ref={ref} className="h-24 w-full" aria-label="Displacement of the watched part over the last few seconds" />;
+  return <canvas ref={ref} className="h-32 w-full" aria-label="Displacement of the watched part over the last few seconds" />;
 }
 
 type SpectrumProps = {
@@ -55,7 +55,7 @@ type SpectrumProps = {
   markerHz: number | null;
 };
 
-const AXIS_HEIGHT = 18;
+const AXIS_HEIGHT = 22;
 const TICK_STEP_HZ = 5;
 
 export function SpectrumChart({ spectrum, baselineHz, markerHz }: SpectrumProps) {
@@ -64,7 +64,7 @@ export function SpectrumChart({ spectrum, baselineHz, markerHz }: SpectrumProps)
     const maxHz = spectrum ? spectrum.sampleRate / 2 : 15;
     const xAt = (hz: number) => (hz / maxHz) * width;
 
-    ctx.font = "11px var(--font-plex-mono), monospace";
+    ctx.font = "14px ui-monospace, monospace";
     ctx.fillStyle = color("--ink-muted");
     ctx.strokeStyle = color("--line");
     for (let hz = 0; hz <= maxHz; hz += TICK_STEP_HZ) {
@@ -77,18 +77,20 @@ export function SpectrumChart({ spectrum, baselineHz, markerHz }: SpectrumProps)
 
     if (baselineHz !== null) {
       ctx.strokeStyle = color("--ink-muted");
-      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 5]);
       ctx.beginPath();
       ctx.moveTo(xAt(baselineHz), 0);
       ctx.lineTo(xAt(baselineHz), plotHeight);
       ctx.stroke();
       ctx.setLineDash([]);
+      ctx.lineWidth = 1;
     }
     if (!spectrum) return;
 
     const peak = spectrum.mags.reduce((max, value) => Math.max(max, value), 0) || 1;
     ctx.fillStyle = color("--ink");
-    ctx.globalAlpha = 0.07;
+    ctx.globalAlpha = 0.12;
     ctx.beginPath();
     ctx.moveTo(0, plotHeight);
     spectrum.mags.forEach((value, i) => {
@@ -99,7 +101,7 @@ export function SpectrumChart({ spectrum, baselineHz, markerHz }: SpectrumProps)
     ctx.globalAlpha = 1;
 
     ctx.strokeStyle = color("--ink");
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 2;
     ctx.beginPath();
     spectrum.mags.forEach((value, i) => {
       const x = xAt(i * spectrum.binHz);
@@ -111,8 +113,8 @@ export function SpectrumChart({ spectrum, baselineHz, markerHz }: SpectrumProps)
 
     if (markerHz !== null) {
       ctx.fillStyle = color("--action");
-      ctx.fillRect(xAt(markerHz) - 0.5, 0, 1, plotHeight);
+      ctx.fillRect(xAt(markerHz) - 1, 0, 2, plotHeight);
     }
   });
-  return <canvas ref={ref} className="h-40 w-full" aria-label="Vibration strength by frequency, in cycles per second" />;
+  return <canvas ref={ref} className="h-56 w-full" aria-label="Vibration strength by frequency, in cycles per second" />;
 }

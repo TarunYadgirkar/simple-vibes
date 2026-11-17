@@ -3,12 +3,13 @@
 :root {
   --page: #fdfdfd;
   --ink: #111111;
-  --ink-muted: #6b6b6b;
-  --line: #e3e3e3;
+  --ink-muted: #4d4d4d;
+  --line: #c9c9c9;
   --action: #1f5fbf;
   --good: #1f7a45;
   --warn: #9a6400;
   --crit: #b3261e;
+  --watch-box: #ffd400;
 }
 
 @theme inline {
@@ -20,6 +21,7 @@
   --color-good: var(--good);
   --color-warn: var(--warn);
   --color-crit: var(--crit);
+  --color-watch-box: var(--watch-box);
   --font-mono: var(--font-plex-mono);
   --font-sans: var(--font-plex-mono);
 }
@@ -27,7 +29,7 @@
 body {
   background: var(--page);
   color: var(--ink);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.5;
 }
 

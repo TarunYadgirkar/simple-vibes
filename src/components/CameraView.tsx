@@ -79,13 +79,13 @@ export function CameraView({ videoRef, roi, onRoiChange, isRunning }: Props) {
         </p>
       )}
       {isRunning && <div
-        className="pointer-events-none absolute ring-1 ring-white"
+        className="pointer-events-none absolute ring-2 ring-watch-box"
         style={{
           left: `${shown.x * 100}%`,
           top: `${shown.y * 100}%`,
           width: `${shown.w * 100}%`,
           height: `${shown.h * 100}%`,
-          boxShadow: "0 0 0 9999px rgb(0 0 0 / 0.45)",
+          boxShadow: "0 0 0 9999px rgb(0 0 0 / 0.3)",
         }}
       />}
     </div>

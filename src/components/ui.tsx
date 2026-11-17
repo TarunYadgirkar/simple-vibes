@@ -35,7 +35,7 @@ export function Button({ variant = "quiet", className = "", children, ...props }
   return (
     <button
       {...props}
-      className={`cursor-pointer py-1 underline-offset-4 hover:underline disabled:cursor-default disabled:text-ink-muted disabled:no-underline ${BUTTON_VARIANT[variant]} ${className}`}
+      className={`cursor-pointer py-1 text-lg underline-offset-4 hover:underline disabled:cursor-default disabled:text-ink-muted disabled:no-underline ${BUTTON_VARIANT[variant]} ${className}`}
     >
       [{children}]
     </button>
@@ -43,7 +43,7 @@ export function Button({ variant = "quiet", className = "", children, ...props }
 }
 
 export const FIELD_CLASS =
-  "h-8 border-b border-line bg-transparent text-ink tabular-nums hover:border-ink-muted";
+  "h-9 border-b border-ink-muted bg-transparent text-ink tabular-nums hover:border-ink-muted";
 
 const HEALTH_STYLE: Record<Health, string> = {
   unknown: "text-ink-muted",
@@ -53,7 +53,7 @@ const HEALTH_STYLE: Record<Health, string> = {
 };
 
 export function HealthPill({ health }: { health: Health }) {
-  return <span className={`font-medium whitespace-nowrap ${HEALTH_STYLE[health]}`}>{HEALTH_LABEL[health].toLowerCase()}</span>;
+  return <span className={`text-xl font-medium whitespace-nowrap ${HEALTH_STYLE[health]}`}>{HEALTH_LABEL[health].toLowerCase()}</span>;
 }
 
 export function formatHz(hz: number): string {
