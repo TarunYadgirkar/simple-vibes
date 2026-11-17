@@ -75,7 +75,7 @@ export function useToneListener({ minHz, onTone, onHumStart, onHumEnd }: Options
         audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
       });
     } catch {
-      setError("Microphone access was blocked. Allow the microphone for this page, then press listen again.");
+      setError("Microphone access was blocked. Allow the microphone for this page, then press start again.");
       return;
     }
     const stopTracks = () => stream.getTracks().forEach((track) => track.stop());

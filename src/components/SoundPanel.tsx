@@ -1,6 +1,6 @@
 import type { Tone, ToneFrame } from "../hooks/useToneListener";
 import { SoundSpectrumChart } from "./charts";
-import { Button, FIELD_CLASS, Panel } from "./ui";
+import { FIELD_CLASS, Panel } from "./ui";
 
 type Props = {
   isListening: boolean;
@@ -9,8 +9,6 @@ type Props = {
   error: string | null;
   minHz: number;
   onMinHzChange: (minHz: number) => void;
-  onStart: () => void;
-  onStop: () => void;
 };
 
 export const SOUND_BANDS = [
@@ -22,7 +20,7 @@ export const SOUND_BANDS = [
 const HARD_TO_HEAR_HZ = 15000;
 const HZ_FORMAT = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 
-export function SoundPanel({ isListening, frame, lastTone, error, minHz, onMinHzChange, onStart, onStop }: Props) {
+export function SoundPanel({ isListening, frame, lastTone, error, minHz, onMinHzChange }: Props) {
   const shown = frame.tone ?? lastTone;
   const caption = !isListening
     ? "mic off"
@@ -34,8 +32,7 @@ export function SoundPanel({ isListening, frame, lastTone, error, minHz, onMinHz
     <Panel
       title="sound"
       action={
-        <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
-          <label className="flex items-baseline gap-2 text-ink-muted">
+        <label className="flex items-baseline gap-2 text-ink-muted">
             band
             <select value={minHz} onChange={(event) => onMinHzChange(Number(event.target.value))} className={FIELD_CLASS}>
               {SOUND_BANDS.map((band) => (
@@ -44,15 +41,7 @@ export function SoundPanel({ isListening, frame, lastTone, error, minHz, onMinHz
                 </option>
               ))}
             </select>
-          </label>
-          {isListening ? (
-            <Button onClick={onStop}>stop</Button>
-          ) : (
-            <Button variant="primary" onClick={onStart}>
-              listen
-            </Button>
-          )}
-        </div>
+        </label>
       }
     >
       {error && (
