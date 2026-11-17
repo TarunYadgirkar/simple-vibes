@@ -1,42 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  --surface: #edf0f2;
-  --panel: #ffffff;
-  --ink: #12222b;
-  --ink-muted: #5b6b74;
-  --line: #d5dce0;
-  --accent: #0a7c86;
-  --accent-ink: #ffffff;
-  --good: #2f8f5b;
-  --warn: #b7791f;
-  --crit: #c2382f;
-  --trace-ref: #9aa7ae;
-  --shadow-panel: 0 1px 2px rgb(18 34 43 / 0.06), 0 6px 20px rgb(18 34 43 / 0.06);
+  --page: #fdfdfd;
+  --ink: #111111;
+  --ink-muted: #6b6b6b;
+  --line: #e3e3e3;
+  --action: #1f5fbf;
+  --good: #1f7a45;
+  --warn: #9a6400;
+  --crit: #b3261e;
 }
 
 @theme inline {
-  --color-surface: var(--surface);
-  --color-panel: var(--panel);
+  --color-page: var(--page);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-line: var(--line);
-  --color-accent: var(--accent);
-  --color-accent-ink: var(--accent-ink);
+  --color-action: var(--action);
   --color-good: var(--good);
   --color-warn: var(--warn);
   --color-crit: var(--crit);
-  --font-sans: var(--font-plex-sans);
   --font-mono: var(--font-plex-mono);
-  --font-display: var(--font-big-shoulders);
-  --shadow-panel: var(--shadow-panel);
-  --radius-panel: 14px;
-  --radius-control: 8px;
+  --font-sans: var(--font-plex-mono);
 }
 
 body {
-  background: var(--surface);
+  background: var(--page);
   color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 h1,
@@ -45,6 +37,6 @@ h2 {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--action);
   outline-offset: 2px;
 }

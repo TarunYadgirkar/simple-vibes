@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { NotePencil } from "@phosphor-icons/react";
 import type { LoggedEvent } from "../lib/monitor/log";
 import type { ReportRequest, ReportResponse } from "../lib/monitor/report";
-import { Button, Panel } from "./ui";
+import { Button, FIELD_CLASS, Panel } from "./ui";
 
 type Props = {
   events: LoggedEvent[];
@@ -54,15 +53,15 @@ export function ReportPanel({ events, baselineHz }: Props) {
   };
 
   return (
-    <Panel title="Morning report">
+    <Panel title="morning report">
       <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-xs text-ink-muted">
-          What the camera is watching
+        <label className="flex flex-col text-ink-muted">
+          what the camera is watching
           <input
             value={assetName}
             maxLength={80}
             onChange={(event) => setAssetName(event.target.value)}
-            className="h-9 w-64 rounded-control bg-surface px-2 text-sm text-ink"
+            className={`${FIELD_CLASS} w-64`}
           />
         </label>
         <Button
@@ -70,22 +69,21 @@ export function ReportPanel({ events, baselineHz }: Props) {
           onClick={() => void handleWrite()}
           disabled={events.length === 0 || assetName.trim() === "" || state.status === "writing"}
         >
-          <NotePencil size={16} weight="bold" />
-          {state.status === "writing" ? "Writing report" : "Write report from the log"}
+          {state.status === "writing" ? "writing report" : "write report from the log"}
         </Button>
       </div>
       {state.status === "idle" && (
-        <p className="text-sm text-ink-muted">
+        <p className="max-w-[65ch] text-ink-muted">
           The agent reads the whole watch log and writes what changed, when, and what to inspect first.
         </p>
       )}
       {state.status === "failed" && (
-        <p role="alert" className="text-sm text-crit">
+        <p role="alert" className="text-crit">
           {state.message}
         </p>
       )}
       {state.status === "done" && (
-        <p className="max-w-[65ch] text-sm leading-relaxed whitespace-pre-wrap">{state.report}</p>
+        <p className="max-w-[65ch] leading-relaxed whitespace-pre-wrap">{state.report}</p>
       )}
     </Panel>
   );

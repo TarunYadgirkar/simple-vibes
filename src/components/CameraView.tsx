@@ -58,7 +58,7 @@ export function CameraView({ videoRef, roi, onRoiChange, isRunning }: Props) {
 
   return (
     <div
-      className="relative w-full cursor-crosshair touch-none overflow-hidden rounded-control bg-ink select-none"
+      className="relative w-full cursor-crosshair touch-none overflow-hidden bg-ink select-none"
       style={{ aspectRatio: aspect }}
       onPointerDown={handleDown}
       onPointerMove={handleMove}
@@ -75,19 +75,19 @@ export function CameraView({ videoRef, roi, onRoiChange, isRunning }: Props) {
       />
       {!isRunning && (
         <p className="absolute inset-0 grid place-items-center px-6 text-center text-sm text-white/70">
-          Press Start, then drag a box around the part that moves.
+          press start, then drag a box around the part that moves
         </p>
       )}
-      <div
-        className="pointer-events-none absolute rounded-[3px] ring-2 ring-accent"
+      {isRunning && <div
+        className="pointer-events-none absolute ring-1 ring-white"
         style={{
           left: `${shown.x * 100}%`,
           top: `${shown.y * 100}%`,
           width: `${shown.w * 100}%`,
           height: `${shown.h * 100}%`,
-          boxShadow: "0 0 0 9999px rgb(18 34 43 / 0.35)",
+          boxShadow: "0 0 0 9999px rgb(0 0 0 / 0.45)",
         }}
-      />
+      />}
     </div>
   );
 }

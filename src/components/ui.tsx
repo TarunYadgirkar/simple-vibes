@@ -10,10 +10,10 @@ interface PanelProps {
 
 export function Panel({ title, action, children, className = "" }: PanelProps) {
   return (
-    <section className={`flex flex-col gap-3 rounded-panel bg-panel p-4 shadow-panel ${className}`}>
+    <section className={`flex flex-col gap-3 border-t border-line pt-3 ${className}`}>
       {(title || action) && (
-        <header className="flex items-center justify-between gap-3">
-          {title && <h2 className="text-sm font-semibold text-ink">{title}</h2>}
+        <header className="flex items-baseline justify-between gap-3">
+          {title && <h2 className="text-ink-muted">{title}</h2>}
           {action}
         </header>
       )}
@@ -27,42 +27,33 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const BUTTON_VARIANT = {
-  primary: "bg-accent text-accent-ink hover:brightness-110",
-  quiet: "bg-surface text-ink hover:bg-line",
+  primary: "text-action font-medium",
+  quiet: "text-ink",
 };
 
-export function Button({ variant = "quiet", className = "", ...props }: ButtonProps) {
+export function Button({ variant = "quiet", className = "", children, ...props }: ButtonProps) {
   return (
     <button
       {...props}
-      className={`inline-flex h-9 items-center justify-center gap-2 rounded-control px-3 text-sm font-medium transition-[scale,background-color,filter] duration-150 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-40 ${BUTTON_VARIANT[variant]} ${className}`}
-    />
+      className={`cursor-pointer py-1 underline-offset-4 hover:underline disabled:cursor-default disabled:text-ink-muted disabled:no-underline ${BUTTON_VARIANT[variant]} ${className}`}
+    >
+      [{children}]
+    </button>
   );
 }
 
-const HEALTH_STYLE: Record<Health, string> = {
-  unknown: "bg-surface text-ink-muted",
-  healthy: "bg-good/12 text-good",
-  drift: "bg-warn/15 text-warn",
-  fault: "bg-crit/12 text-crit",
-};
+export const FIELD_CLASS =
+  "h-8 border-b border-line bg-transparent text-ink tabular-nums hover:border-ink-muted";
 
-const HEALTH_DOT: Record<Health, string> = {
-  unknown: "bg-ink-muted",
-  healthy: "bg-good",
-  drift: "bg-warn",
-  fault: "bg-crit",
+const HEALTH_STYLE: Record<Health, string> = {
+  unknown: "text-ink-muted",
+  healthy: "text-good",
+  drift: "text-warn",
+  fault: "text-crit",
 };
 
 export function HealthPill({ health }: { health: Health }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${HEALTH_STYLE[health]}`}
-    >
-      <span className={`size-1.5 rounded-full ${HEALTH_DOT[health]}`} />
-      {HEALTH_LABEL[health]}
-    </span>
-  );
+  return <span className={`font-medium whitespace-nowrap ${HEALTH_STYLE[health]}`}>{HEALTH_LABEL[health].toLowerCase()}</span>;
 }
 
 export function formatHz(hz: number): string {

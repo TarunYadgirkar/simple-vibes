@@ -11,7 +11,7 @@ const TIME_FORMAT = new Intl.DateTimeFormat("en-US", {
 export function EventLog({ events }: { events: LoggedEvent[] }) {
   if (events.length === 0) {
     return (
-      <p className="text-sm text-ink-muted">
+      <p className="text-ink-muted">
         Every vibration the camera reads is logged here with its frequency and how far it sits from the baseline.
       </p>
     );
@@ -19,14 +19,14 @@ export function EventLog({ events }: { events: LoggedEvent[] }) {
 
   return (
     <div className="max-h-72 overflow-auto">
-      <table className="w-full text-left font-mono text-sm tabular-nums">
-        <thead className="sticky top-0 bg-panel font-sans text-xs text-ink-muted">
+      <table className="w-full text-left tabular-nums">
+        <thead className="sticky top-0 bg-page text-ink-muted">
           <tr>
-            <th className="py-1.5 pr-4 font-medium">Time</th>
-            <th className="py-1.5 pr-4 font-medium">Frequency</th>
-            <th className="py-1.5 pr-4 font-medium">Change</th>
-            <th className="py-1.5 pr-4 font-medium">Movement</th>
-            <th className="py-1.5 font-medium">State</th>
+            <th className="py-1.5 pr-4 font-normal">time</th>
+            <th className="py-1.5 pr-4 font-normal">frequency</th>
+            <th className="py-1.5 pr-4 font-normal">change</th>
+            <th className="py-1.5 pr-4 font-normal">movement</th>
+            <th className="py-1.5 font-normal">state</th>
           </tr>
         </thead>
         <tbody>

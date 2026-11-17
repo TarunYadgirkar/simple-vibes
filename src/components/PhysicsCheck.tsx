@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Reading } from "../lib/monitor/log";
-import { formatHz, Panel } from "./ui";
+import { FIELD_CLASS, formatHz, Panel } from "./ui";
 
 type Props = {
   baseline: Reading | null;
@@ -10,14 +10,13 @@ type Props = {
 };
 
 const MODELS = {
-  string: { label: "Stretched cable (same tension)", exponent: 1 },
-  strip: { label: "Strip clamped at one end", exponent: 2 },
+  string: { label: "stretched cable, same tension", exponent: 1 },
+  strip: { label: "strip clamped at one end", exponent: 2 },
 } as const;
 
 type ModelId = keyof typeof MODELS;
 
-const INPUT_CLASS =
-  "h-9 w-full rounded-control bg-surface px-2 font-mono text-sm tabular-nums text-ink";
+const INPUT_CLASS = `${FIELD_CLASS} w-full`;
 
 export function PhysicsCheck({ baseline, last }: Props) {
   const [model, setModel] = useState<ModelId>("string");
@@ -31,15 +30,15 @@ export function PhysicsCheck({ baseline, last }: Props) {
   const error = predicted && last ? ((last.hz - predicted) / predicted) * 100 : null;
 
   return (
-    <Panel title="Check it against theory">
-      <p className="text-sm text-ink-muted">
+    <Panel title="check against theory">
+      <p className="max-w-[65ch] text-ink-muted">
         Change the free length and the frequency should move by a known amount. Enter both lengths to
         compare the prediction with what the camera reads.
       </p>
-      <div className="grid grid-cols-3 gap-3">
-        <label className="flex flex-col gap-1 text-xs text-ink-muted">
-          Object
-          <select value={model} onChange={(event) => setModel(event.target.value as ModelId)} className={`${INPUT_CLASS} font-sans`}>
+      <div className="grid grid-cols-3 items-end gap-3">
+        <label className="flex flex-col text-ink-muted">
+          object
+          <select value={model} onChange={(event) => setModel(event.target.value as ModelId)} className={INPUT_CLASS}>
             {Object.entries(MODELS).map(([id, { label }]) => (
               <option key={id} value={id}>
                 {label}
@@ -47,16 +46,16 @@ export function PhysicsCheck({ baseline, last }: Props) {
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-xs text-ink-muted">
-          Baseline length (cm)
+        <label className="flex flex-col text-ink-muted">
+          baseline length (cm)
           <input inputMode="decimal" value={baseLength} onChange={(event) => setBaseLength(event.target.value)} className={INPUT_CLASS} />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-ink-muted">
-          New length (cm)
+        <label className="flex flex-col text-ink-muted">
+          new length (cm)
           <input inputMode="decimal" value={newLength} onChange={(event) => setNewLength(event.target.value)} className={INPUT_CLASS} />
         </label>
       </div>
-      <p className="font-mono text-sm tabular-nums">
+      <p className="tabular-nums">
         {predicted === null
           ? "Save a baseline first."
           : `Predicted ${formatHz(predicted)} Hz, measured ${last ? formatHz(last.hz) : "n/a"} Hz${

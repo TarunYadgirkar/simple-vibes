@@ -35,8 +35,8 @@ export function WaveChart({ wave }: { wave: number[] }) {
     if (wave.length < 2) return;
 
     const span = Math.max(MIN_WAVE_SPAN_PX, ...wave.map(Math.abs));
-    ctx.strokeStyle = color("--accent");
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = color("--ink");
+    ctx.lineWidth = 1;
     ctx.beginPath();
     wave.forEach((value, i) => {
       const x = (i / (wave.length - 1)) * width;
@@ -76,7 +76,7 @@ export function SpectrumChart({ spectrum, baselineHz, markerHz }: SpectrumProps)
     }
 
     if (baselineHz !== null) {
-      ctx.strokeStyle = color("--trace-ref");
+      ctx.strokeStyle = color("--ink-muted");
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
       ctx.moveTo(xAt(baselineHz), 0);
@@ -87,8 +87,8 @@ export function SpectrumChart({ spectrum, baselineHz, markerHz }: SpectrumProps)
     if (!spectrum) return;
 
     const peak = spectrum.mags.reduce((max, value) => Math.max(max, value), 0) || 1;
-    ctx.fillStyle = color("--accent");
-    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = color("--ink");
+    ctx.globalAlpha = 0.07;
     ctx.beginPath();
     ctx.moveTo(0, plotHeight);
     spectrum.mags.forEach((value, i) => {
@@ -98,8 +98,8 @@ export function SpectrumChart({ spectrum, baselineHz, markerHz }: SpectrumProps)
     ctx.fill();
     ctx.globalAlpha = 1;
 
-    ctx.strokeStyle = color("--accent");
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = color("--ink");
+    ctx.lineWidth = 1;
     ctx.beginPath();
     spectrum.mags.forEach((value, i) => {
       const x = xAt(i * spectrum.binHz);
@@ -110,8 +110,8 @@ export function SpectrumChart({ spectrum, baselineHz, markerHz }: SpectrumProps)
     ctx.stroke();
 
     if (markerHz !== null) {
-      ctx.fillStyle = color("--ink");
-      ctx.fillRect(xAt(markerHz) - 1, 0, 2, plotHeight);
+      ctx.fillStyle = color("--action");
+      ctx.fillRect(xAt(markerHz) - 0.5, 0, 1, plotHeight);
     }
   });
   return <canvas ref={ref} className="h-40 w-full" aria-label="Vibration strength by frequency, in cycles per second" />;
