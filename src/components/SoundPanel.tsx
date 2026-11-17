@@ -79,7 +79,9 @@ export function SoundPanel({ isListening, frame, lastTone, error, minHz, onMinHz
         </div>
         <SoundSpectrumChart plot={frame.plot} maxHz={frame.maxHz} markerHz={frame.tone?.hz ?? null} />
       </div>
-      <p className="text-ink-muted">sound map: last 30 s, pitch up, darker is louder</p>
+      <p className="text-ink-muted">
+        {isListening ? `mic hears up to ${HZ_FORMAT.format(frame.maxHz)} Hz. ` : ""}sound map: last 30 s, pitch up, darker is louder
+      </p>
       <SoundMap plot={frame.plot} maxHz={frame.maxHz} />
     </Panel>
   );

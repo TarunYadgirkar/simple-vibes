@@ -33,7 +33,7 @@ const HUM_START_SCORE = 8;
 const HUM_SCORE_CAP = 20;
 const HUM_WRONG_PITCH_PENALTY = 1;
 const HUM_ACTIVE_MISS_PENALTY = 0.34;
-const TONE_MIN_POLLS = 5;
+const TONE_MIN_POLLS = 3;
 const HUM_PITCH_TOLERANCE = 0.08;
 
 const EMPTY_FRAME: ToneFrame = { tone: null, hum: null, plot: [], maxHz: DEFAULT_MAX_HZ };
@@ -75,7 +75,13 @@ export function useToneListener({ minHz, onTone, onHumStart, onHumEnd }: Options
       // Voice processing filters out steady tones, which is exactly what this listens for.
       stream = await navigator.mediaDevices.getUserMedia({
         video: false,
-        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          channelCount: 1,
+          sampleRate: { ideal: 48000 },
+        },
       });
     } catch {
       setError("Microphone access was blocked. Allow the microphone for this page, then press start again.");
@@ -85,6 +91,7 @@ export function useToneListener({ minHz, onTone, onHumStart, onHumEnd }: Options
     if (id !== session.current) return stopTracks();
 
     const audio = new AudioContext();
+    await audio.resume();
     const analyser = audio.createAnalyser();
     analyser.fftSize = FFT_SIZE;
     analyser.smoothingTimeConstant = SMOOTHING;
