@@ -76,7 +76,7 @@ export function useToneListener({ minHz, onTone, onHumStart, onHumEnd }: Options
       });
     } catch {
       if (id !== session.current) return;
-      setError("Microphone access was blocked. Allow the microphone for this page, then press listen again.");
+      setError("Microphone access was blocked. Allow the microphone for this page, then press start again.");
       return;
     }
     let tracksStopped = false;
@@ -168,7 +168,7 @@ export function useToneListener({ minHz, onTone, onHumStart, onHumEnd }: Options
       cleanup();
       if (id !== session.current) return;
       release.current = () => {};
-      setError("Microphone could not start. Check microphone permission, then press listen again.");
+      setError("Microphone could not start. Check microphone permission, then press start again.");
     }
   }, [stop]);
 

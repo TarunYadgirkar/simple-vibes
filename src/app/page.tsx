@@ -130,6 +130,15 @@ export default function Home() {
     monitor.resetMeasurement();
   };
 
+  const handleStart = () => {
+    void monitor.start(source);
+    void sound.start();
+  };
+  const handleStop = () => {
+    monitor.stop();
+    sound.stop();
+  };
+
   const handleSourceChange = (next: string) => {
     if (next === source) return;
     resetMeasurement();
@@ -183,10 +192,10 @@ export default function Home() {
               <option value="horizontal">side to side</option>
             </select>
           </label>
-          {isRunning ? (
-            <Button onClick={monitor.stop}>stop</Button>
+          {isRunning || sound.isListening ? (
+            <Button onClick={handleStop}>stop</Button>
           ) : (
-            <Button variant="primary" onClick={() => void monitor.start(source)} disabled={monitor.runState === "starting"}>
+            <Button variant="primary" onClick={handleStart} disabled={monitor.runState === "starting"}>
               start
             </Button>
           )}
@@ -246,8 +255,6 @@ export default function Home() {
         error={sound.error}
         minHz={minHz}
         onMinHzChange={setMinHz}
-        onStart={() => void sound.start()}
-        onStop={sound.stop}
       />
 
       <Panel
