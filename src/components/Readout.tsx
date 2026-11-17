@@ -34,8 +34,8 @@ export function Readout({ live, last, baseline, onSetBaseline }: Props) {
         <dd>{formatDeviation(deviation)}</dd>
         <dt className="text-ink-muted">baseline</dt>
         <dd>{baseline ? `${formatHz(baseline.hz)} Hz` : "not set"}</dd>
-        <dt className="text-ink-muted">movement</dt>
-        <dd>{shown ? `${shown.amplitudePx.toFixed(1)} px` : "n/a"}</dd>
+        <dt className="text-ink-muted">moving area</dt>
+        <dd>{shown ? `${shown.amplitudePx.toFixed(1)}% of box` : "n/a"}</dd>
       </dl>
       <Button onClick={onSetBaseline} disabled={!last} className="self-start">
         set baseline

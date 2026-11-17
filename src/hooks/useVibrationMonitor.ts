@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { edgeProfile, estimateShift, type Axis } from "../lib/dsp/motion";
-import { analyze, type Sample, type Spectrum } from "../lib/dsp/spectrum";
+import { analyzeGrid } from "../lib/dsp/grid";
+import type { Axis } from "../lib/dsp/motion";
+import type { Spectrum } from "../lib/dsp/spectrum";
 import type { Reading } from "../lib/monitor/log";
 import { createTestPattern } from "../lib/sources/testPattern";
 
@@ -22,39 +23,38 @@ export interface MonitorFrame {
 export type RunState = "idle" | "starting" | "running" | "error";
 export const TEST_SOURCE = "test";
 
-const WINDOW_S = 2.5;
+const GRID_PX = 40;
+const MAX_FRAMES = 96;
 const ANALYZE_EVERY_FRAMES = 3;
-const SNR_LOCK = 10;
-const MIN_AMPLITUDE_PX = 0.05;
-const COMMIT_AFTER_S = 5;
-const REFERENCE_REFRESH_S = 3;
-const MAX_PROFILE_PX = 320;
-const MAX_LAG_FRACTION = 0.3;
-const MIN_BOX_PX = 8;
+const SNR_LOCK = 3.2;
+const MIN_AREA_PCT = 1;
 const STEADY_TOLERANCE = 0.08;
+const STEADY_LOOKS = 2;
+const COMMIT_AFTER_S = 5;
+const MIN_BOX_PX = 8;
 const CAPTURE_WIDTH_PX = 640;
 const CAPTURE_QUALITY = 0.7;
 
 interface Engine {
-  samples: Sample[];
-  reference: Float64Array | null;
-  referenceAt: number;
-  frames: number;
+  frames: Float32Array[];
+  times: number[];
+  count: number;
   lastT: number;
   pending: Reading | null;
   pendingSince: number;
   lastPeakHz: number;
+  steadyLooks: number;
 }
 
 const freshEngine = (): Engine => ({
-  samples: [],
-  reference: null,
-  referenceAt: 0,
-  frames: 0,
+  frames: [],
+  times: [],
+  count: 0,
   lastT: -1,
   pending: null,
   pendingSince: 0,
   lastPeakHz: 0,
+  steadyLooks: 0,
 });
 
 const EMPTY_FRAME: MonitorFrame = { wave: [], spectrum: null, live: null };
@@ -90,56 +90,46 @@ export function useVibrationMonitor({ roi, axis, onReading }: Options) {
     if (t <= state.lastT || video.videoWidth === 0) return;
     state.lastT = t;
 
-    const { roi: box, axis: motionAxis, onReading: commit } = settings.current;
-    const sw = Math.max(MIN_BOX_PX, Math.round(box.w * video.videoWidth));
-    const sh = Math.max(MIN_BOX_PX, Math.round(box.h * video.videoHeight));
-    const scale = Math.min(1, MAX_PROFILE_PX / Math.max(sw, sh));
-    const cw = Math.max(MIN_BOX_PX, Math.round(sw * scale));
-    const ch = Math.max(MIN_BOX_PX, Math.round(sh * scale));
-
+    const { roi: box, onReading: commit } = settings.current;
     canvas.current ??= document.createElement("canvas");
     const work = canvas.current;
-    if (work.width !== cw || work.height !== ch) {
-      work.width = cw;
-      work.height = ch;
-      state.reference = null;
+    if (work.width !== GRID_PX) {
+      work.width = GRID_PX;
+      work.height = GRID_PX;
     }
     const ctx = work.getContext("2d", { willReadFrequently: true })!;
     ctx.drawImage(
       video,
       Math.round(box.x * video.videoWidth),
       Math.round(box.y * video.videoHeight),
-      sw,
-      sh,
+      Math.max(MIN_BOX_PX, Math.round(box.w * video.videoWidth)),
+      Math.max(MIN_BOX_PX, Math.round(box.h * video.videoHeight)),
       0,
       0,
-      cw,
-      ch,
+      GRID_PX,
+      GRID_PX,
     );
-    const profile = edgeProfile(ctx.getImageData(0, 0, cw, ch).data, cw, ch, motionAxis);
-
-    if (!state.reference) {
-      state.reference = profile;
-      state.referenceAt = t;
-      state.samples = [];
-      return;
+    const rgba = ctx.getImageData(0, 0, GRID_PX, GRID_PX).data;
+    const grey = new Float32Array(GRID_PX * GRID_PX);
+    for (let i = 0; i < grey.length; i++) {
+      grey[i] = 0.299 * rgba[i * 4] + 0.587 * rgba[i * 4 + 1] + 0.114 * rgba[i * 4 + 2];
     }
+    state.frames = [...state.frames.slice(-(MAX_FRAMES - 1)), grey];
+    state.times = [...state.times.slice(-(MAX_FRAMES - 1)), t];
+    state.count += 1;
+    if (state.count % ANALYZE_EVERY_FRAMES !== 0) return;
 
-    const maxLag = Math.floor(profile.length * MAX_LAG_FRACTION);
-    const shift = estimateShift(state.reference, profile, maxLag) / scale;
-    state.samples = [...state.samples.filter((s) => t - s.t <= WINDOW_S), { t, x: shift }];
-    state.frames += 1;
-    if (state.frames % ANALYZE_EVERY_FRAMES !== 0) return;
-
-    const spectrum = analyze(state.samples);
+    const spectrum = analyzeGrid(state.frames, state.times);
     const hasPeak =
-      spectrum !== null && spectrum.snr >= SNR_LOCK && spectrum.amplitude >= MIN_AMPLITUDE_PX;
-    // A person shifting in the box gives one-off peaks. A real vibration holds its frequency between looks.
-    const isLocked =
+      spectrum !== null && spectrum.snr >= SNR_LOCK && spectrum.amplitude >= MIN_AREA_PCT;
+    // One odd look can be a hand passing through. A real vibration holds its frequency across looks.
+    const isSteady =
       hasPeak &&
       state.lastPeakHz > 0 &&
       Math.abs(spectrum.peakHz - state.lastPeakHz) / state.lastPeakHz <= STEADY_TOLERANCE;
+    state.steadyLooks = isSteady ? state.steadyLooks + 1 : 0;
     state.lastPeakHz = hasPeak ? spectrum.peakHz : 0;
+    const isLocked = hasPeak && state.steadyLooks >= STEADY_LOOKS;
     const live: Reading | null = isLocked
       ? { hz: spectrum.peakHz, snr: spectrum.snr, amplitudePx: spectrum.amplitude, at: Date.now() }
       : null;
@@ -151,11 +141,6 @@ export function useVibrationMonitor({ roi, axis, onReading }: Options) {
     if (state.pending && (!live || t - state.pendingSince > COMMIT_AFTER_S)) {
       commit(state.pending);
       state.pending = null;
-    }
-    if (!live && t - state.referenceAt > REFERENCE_REFRESH_S) {
-      state.reference = profile;
-      state.referenceAt = t;
-      state.samples = [];
     }
 
     setFrame({ wave: spectrum?.detrended ?? [], spectrum, live });

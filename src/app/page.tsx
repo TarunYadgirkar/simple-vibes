@@ -151,13 +151,6 @@ export default function Home() {
               <option value={TEST_SOURCE}>test string, {TEST_PATTERN_HZ} Hz</option>
             </select>
           </label>
-          <label className="flex items-baseline gap-2 text-ink-muted">
-            motion
-            <select value={axis} onChange={(event) => setAxis(event.target.value as Axis)} className={FIELD_CLASS}>
-              <option value="vertical">up and down</option>
-              <option value="horizontal">side to side</option>
-            </select>
-          </label>
           {isRunning || sound.isListening ? (
             <Button onClick={handleStop}>stop</Button>
           ) : (

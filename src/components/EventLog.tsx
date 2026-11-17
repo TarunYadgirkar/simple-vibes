@@ -40,7 +40,7 @@ export function EventLog({ events }: { events: LoggedEvent[] }) {
               <td className="py-1.5 pr-4">{formatHz(event.hz)} Hz</td>
               <td className="py-1.5 pr-4">{formatDeviation(event.deviationPct)}</td>
               <td className="py-1.5 pr-4">
-                {event.kind === "vibration" && `${event.amplitudePx.toFixed(1)} px`}
+                {event.kind === "vibration" && `${event.amplitudePx.toFixed(1)}%`}
                 {event.levelDb !== null && `${event.levelDb.toFixed(0)} dB`}
               </td>
               <td className="py-1.5">
