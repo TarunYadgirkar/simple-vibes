@@ -1,5 +1,5 @@
 import type { Tone, ToneFrame } from "../hooks/useToneListener";
-import { SoundSpectrumChart } from "./charts";
+import { SoundMap, SoundSpectrumChart } from "./charts";
 import { FIELD_CLASS, Panel } from "./ui";
 
 type Props = {
@@ -79,6 +79,8 @@ export function SoundPanel({ isListening, frame, lastTone, error, minHz, onMinHz
         </div>
         <SoundSpectrumChart plot={frame.plot} maxHz={frame.maxHz} markerHz={frame.tone?.hz ?? null} />
       </div>
+      <p className="text-ink-muted">sound map: last 30 s, pitch up, darker is louder</p>
+      <SoundMap plot={frame.plot} maxHz={frame.maxHz} />
     </Panel>
   );
 }

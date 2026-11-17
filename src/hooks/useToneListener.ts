@@ -27,11 +27,14 @@ const FFT_SIZE = 16384;
 const SMOOTHING = 0.5;
 const POLL_MS = 100;
 const COMMIT_AFTER_MS = 5000;
-const PLOT_POINTS = 512;
+const PLOT_POINTS = 2048;
 const DEFAULT_MAX_HZ = 24000;
-const HUM_STABLE_POLLS = 15;
-const HUM_MAX_MISSES = 3;
-const HUM_PITCH_TOLERANCE = 0.05;
+const HUM_START_SCORE = 8;
+const HUM_SCORE_CAP = 20;
+const HUM_WRONG_PITCH_PENALTY = 1;
+const HUM_ACTIVE_MISS_PENALTY = 0.34;
+const TONE_MIN_POLLS = 5;
+const HUM_PITCH_TOLERANCE = 0.08;
 
 const EMPTY_FRAME: ToneFrame = { tone: null, hum: null, plot: [], maxHz: DEFAULT_MAX_HZ };
 
@@ -90,9 +93,9 @@ export function useToneListener({ minHz, onTone, onHumStart, onHumEnd }: Options
     const binHz = audio.sampleRate / FFT_SIZE;
     let pending: Tone | null = null;
     let pendingSince = 0;
+    let pendingPolls = 0;
     let humPitch = 0;
-    let humRun = 0;
-    let humMisses = 0;
+    let humScore = 0;
     let activeHum: Hum | null = null;
 
     const timer = setInterval(() => {
@@ -100,29 +103,35 @@ export function useToneListener({ minHz, onTone, onHumStart, onHumEnd }: Options
       const estimate = findTone(bins, binHz, settings.current.minHz);
       const now = Date.now();
       const tone = estimate ? { ...estimate, at: now } : null;
-      if (tone && (!pending || tone.snrDb > pending.snrDb)) {
-        if (!pending) pendingSince = now;
-        pending = tone;
+      if (tone) {
+        if (!pending) {
+          pendingSince = now;
+          pendingPolls = 0;
+        }
+        pendingPolls += 1;
+        if (!pending || tone.snrDb > pending.snrDb) pending = tone;
       }
       if (pending && (!tone || now - pendingSince > COMMIT_AFTER_MS)) {
-        settings.current.onTone(pending);
+        // A blip shorter than half a second is a click or a syllable, not a tone.
+        if (pendingPolls >= TONE_MIN_POLLS) settings.current.onTone(pending);
         pending = null;
       }
-      // Speech also has overtones, but its pitch wanders. Only a pitch that holds steady counts as a hum.
+      // Speech also has overtones, but its pitch wanders. A hum earns a point for each look that holds
+      // its pitch and loses one for each look that misses, so beating rotors survive and syllables do not.
       const hum = findHum(bins, binHz);
-      const holdsPitch = hum !== null && (humRun === 0 || Math.abs(hum.hz - humPitch) / humPitch <= HUM_PITCH_TOLERANCE);
+      const holdsPitch =
+        hum !== null && (humScore === 0 || Math.abs(hum.hz - humPitch) / humPitch <= HUM_PITCH_TOLERANCE);
       if (hum && holdsPitch) {
-        humPitch = humRun === 0 ? hum.hz : humPitch * 0.8 + hum.hz * 0.2;
-        humRun += 1;
-        humMisses = 0;
+        humPitch = humScore === 0 ? hum.hz : humPitch * 0.8 + hum.hz * 0.2;
+        humScore = Math.min(HUM_SCORE_CAP, humScore + 1);
       } else {
-        humMisses += 1;
-        if (humMisses > HUM_MAX_MISSES) humRun = 0;
+        const penalty = activeHum ? HUM_ACTIVE_MISS_PENALTY : hum ? HUM_WRONG_PITCH_PENALTY : 1;
+        humScore = Math.max(0, humScore - penalty);
       }
-      if (!activeHum && hum && humRun >= HUM_STABLE_POLLS) {
+      if (!activeHum && hum && humScore >= HUM_START_SCORE) {
         activeHum = { id: now, hz: humPitch, harmonics: hum.harmonics };
         settings.current.onHumStart(activeHum);
-      } else if (activeHum && humRun === 0) {
+      } else if (activeHum && humScore === 0) {
         settings.current.onHumEnd(activeHum.id, (now - activeHum.id) / 1000);
         activeHum = null;
       } else if (activeHum && hum && holdsPitch) {

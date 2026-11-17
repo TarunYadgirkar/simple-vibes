@@ -4,7 +4,7 @@ export interface ToneEstimate {
   snrDb: number;
 }
 
-const SNR_LOCK_DB = 25;
+const SNR_LOCK_DB = 18;
 const MIN_LEVEL_DB = -90;
 const FLOOR_SAMPLE_STEP = 8;
 

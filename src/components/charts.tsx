@@ -91,10 +91,10 @@ function SpectrumPlot({ points, maxHz, tickStepHz, formatTick, baselineHz, marke
     }
     if (points.length < 2) return;
 
-    const trace = () => {
+    const trace = (isNewPath: boolean) => {
       points.forEach((value, i) => {
         const x = (i / (points.length - 1)) * width;
-        if (i === 0) ctx.moveTo(x, yAt(value));
+        if (i === 0 && isNewPath) ctx.moveTo(x, yAt(value));
         else ctx.lineTo(x, yAt(value));
       });
     };
@@ -102,7 +102,7 @@ function SpectrumPlot({ points, maxHz, tickStepHz, formatTick, baselineHz, marke
     ctx.globalAlpha = 0.12;
     ctx.beginPath();
     ctx.moveTo(0, plotHeight);
-    trace();
+    trace(false);
     ctx.lineTo(width, plotHeight);
     ctx.fill();
     ctx.globalAlpha = 1;
@@ -110,7 +110,7 @@ function SpectrumPlot({ points, maxHz, tickStepHz, formatTick, baselineHz, marke
     ctx.strokeStyle = color("--ink");
     ctx.lineWidth = 2;
     ctx.beginPath();
-    trace();
+    trace(true);
     ctx.stroke();
 
     if (markerHz !== null) {
@@ -164,5 +164,64 @@ export function SoundSpectrumChart({ plot, maxHz, markerHz }: SoundProps) {
       markerHz={markerHz}
       label="Sound level by frequency, in thousands of cycles per second"
     />
+  );
+}
+
+const MAP_WIDTH_PX = 600;
+const MAP_HEIGHT_PX = 256;
+const MAP_STEP_PX = 2;
+const MAP_MIN_HZ = 50;
+const MAP_TICKS_HZ = [100, 1000, 10000];
+
+// Scrolling map of the whole sound spectrum: time runs left to right, pitch runs bottom to top,
+// darker means louder. A tone draws one line, a hum draws a stack of lines.
+// Pitch is on a log scale so engine hums (hundreds of Hz) get as much room as near-ultrasound.
+export function SoundMap({ plot, maxHz }: { plot: number[]; maxHz: number }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas || plot.length === 0) return;
+    const ctx = canvas.getContext("2d")!;
+    const styles = getComputedStyle(canvas);
+    const x = MAP_WIDTH_PX - MAP_STEP_PX;
+
+    ctx.globalAlpha = 1;
+    ctx.drawImage(canvas, -MAP_STEP_PX, 0);
+    ctx.fillStyle = styles.getPropertyValue("--page").trim();
+    ctx.fillRect(x, 0, MAP_STEP_PX, MAP_HEIGHT_PX);
+    ctx.fillStyle = styles.getPropertyValue("--ink").trim();
+    const indexAt = (row: number) =>
+      Math.floor(((MAP_MIN_HZ * (maxHz / MAP_MIN_HZ) ** (row / MAP_HEIGHT_PX)) / maxHz) * plot.length);
+    for (let row = 0; row < MAP_HEIGHT_PX; row++) {
+      const from = Math.min(plot.length - 1, indexAt(row));
+      const to = Math.min(plot.length, Math.max(from + 1, indexAt(row + 1)));
+      let level = 0;
+      for (let i = from; i < to; i++) level = Math.max(level, plot[i]);
+      ctx.globalAlpha = level * level;
+      ctx.fillRect(x, MAP_HEIGHT_PX - 1 - row, MAP_STEP_PX, 1);
+    }
+  }, [plot, maxHz]);
+
+  return (
+    <div className="relative">
+      <canvas
+        ref={ref}
+        width={MAP_WIDTH_PX}
+        height={MAP_HEIGHT_PX}
+        className="h-64 w-full bg-page"
+        style={{ imageRendering: "pixelated" }}
+        aria-label="Sound level across all pitches over the last 30 seconds"
+      />
+      {MAP_TICKS_HZ.map((hz) => (
+        <span
+          key={hz}
+          className="absolute left-1 -translate-y-1/2 bg-page px-1 text-sm text-ink-muted"
+          style={{ top: `${(1 - Math.log(hz / MAP_MIN_HZ) / Math.log(maxHz / MAP_MIN_HZ)) * 100}%` }}
+        >
+          {hz >= 1000 ? `${hz / 1000}k` : hz}
+        </span>
+      ))}
+    </div>
   );
 }
