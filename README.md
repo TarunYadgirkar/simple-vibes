@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Simple Vibes
 
-## Getting Started
+Simple Vibes reads how fast something vibrates using an ordinary webcam and a microphone, and flags when that frequency moves away from a healthy baseline. An agent then looks at the camera frame, says what changed, and writes a report from everything logged while nobody was watching.
 
-First, run the development server:
+Built at Agents after Dark (UC Berkeley, November 2026) for the computer vision track.
+
+## Why it exists
+
+A part that is loosening, cracking or carrying extra mass vibrates at a different frequency than it did when it was healthy. Measuring that normally means a contact sensor on every part. A camera pointed at the part can do the same job from a distance, with hardware people already own.
+
+## How it works
+
+1. **Track.** You drag a box around the part. Each frame, the box is collapsed to a one-dimensional profile of brightness edges, and that profile is matched against a reference to find how far the part moved, to a fraction of a pixel.
+2. **Find the frequency.** The last 2.5 seconds of movement are detrended, windowed and run through a Fourier transform. The strongest peak is the vibration frequency. A reading only counts when the peak stands well clear of the noise.
+3. **Compare.** You save one reading as the healthy baseline. Later readings within 5% are healthy, 5% to 15% are drifting, and beyond 15% is a fault.
+4. **Look.** When a reading drifts, the agent receives the baseline photo and the current photo and writes what visibly changed.
+5. **Listen.** The microphone runs through the same idea for sound, up to 24,000 Hz, including tones most adults cannot hear.
+6. **Report.** The agent turns the whole log into a short maintenance report.
+
+A webcam delivering 30 frames per second can read vibrations up to 15 Hz. The page shows the limit for the camera in use.
+
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. The camera and microphone work without any setup. The agent features need an Anthropic API key in `.env.local`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+ANTHROPIC_API_KEY=your-key
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+To check the pipeline without a camera, choose the "test string" source. It draws a string plucked at 7.3 Hz and runs it through the same code as a real camera.
 
-## Learn More
+## What is verified
 
-To learn more about Next.js, take a look at the following resources:
+On synthetic frames of a vibrating line at 3.1, 7.3, 9.0 and 12.4 Hz, the tracker and spectrum code recover the frequency to within 0.01 Hz, including a movement of 0.3 pixels, and report nothing on noise alone.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Limits
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Movement must be along one axis inside the box (up and down, or side to side).
+- The camera must be still. Camera shake reads as vibration.
+- Fast machinery needs a higher frame rate than a webcam provides.
+- This is a one-night prototype. It has not been tested on real industrial equipment.
 
-## Deploy on Vercel
+## Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Next.js, TypeScript and Tailwind. All tracking and signal processing runs in the browser. Claude writes the agent notes and the report.
