@@ -2,6 +2,8 @@
 
 Simple Vibes reads how fast something vibrates using an ordinary webcam and a microphone, and flags when that frequency moves away from a healthy baseline. An agent then looks at the camera frame, says what changed, and writes a report from everything logged while nobody was watching.
 
+Live: https://simple-vibes.vercel.app
+
 Built at Agents after Dark (UC Berkeley, November 2026) for the computer vision track.
 
 ## Why it exists
