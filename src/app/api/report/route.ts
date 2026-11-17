@@ -23,6 +23,11 @@ export async function POST(request: Request): Promise<Response> {
     return json({ error: "Add ANTHROPIC_API_KEY to .env.local and restart the app to write reports." }, 503);
   }
 
+  // Requiring JSON forces a CORS preflight, so other sites cannot post here and spend the key.
+  if (!request.headers.get("content-type")?.startsWith("application/json")) {
+    return json({ error: "The watch log must be sent as JSON." }, 415);
+  }
+
   const parsed = reportRequestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return json({ error: "The watch log could not be read. Clear it and record new readings." }, 400);
@@ -41,6 +46,9 @@ export async function POST(request: Request): Promise<Response> {
       .map((block) => block.text)
       .join("\n")
       .trim();
+    if (report === "") {
+      return json({ error: "The agent returned an empty report. Try again." }, 502);
+    }
     return json({ report }, 200);
   } catch (error: unknown) {
     console.error("report generation failed", error);
