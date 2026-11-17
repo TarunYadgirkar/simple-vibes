@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { isRateLimited } from "./rateLimit";
 
 const MODEL = "claude-sonnet-5-5";
 const MAX_TOKENS = 4000;
@@ -14,6 +15,9 @@ export function rejectUnusable(request: Request): Response | null {
   }
   if (!request.headers.get("content-type")?.startsWith("application/json")) {
     return errorResponse("Requests must be sent as JSON.", 415);
+  }
+  if (isRateLimited(request)) {
+    return errorResponse("Too many agent requests from this device. Wait a few minutes and try again.", 429);
   }
   return null;
 }
