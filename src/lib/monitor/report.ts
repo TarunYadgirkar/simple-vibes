@@ -5,11 +5,10 @@ const MAX_REPORT_EVENTS = 500;
 export const reportRequestSchema = z.object({
   assetName: z.string().trim().min(1).max(80),
   baselineHz: z.number().positive().finite().nullable(),
-  timeZone: z.string().regex(/^[A-Za-z0-9_+\-\/]{1,64}$/),
   events: z
     .array(
       z.object({
-        at: z.number().int().positive(),
+        time: z.string().min(1).max(40),
         sensor: z.enum(["camera", "mic"]),
         levelDb: z.number().finite().nullable(),
         hz: z.number().positive().finite(),

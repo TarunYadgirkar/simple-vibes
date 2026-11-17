@@ -18,6 +18,14 @@ type ReportState =
   | { status: "done"; report: string }
   | { status: "failed"; message: string };
 
+const TIME_FORMAT = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+});
+
 const NETWORK_ERROR = "The report service did not respond. Check that the app is still running, then try again.";
 
 export function ReportPanel({ events, baselineHz, assetName, onAssetNameChange }: Props) {
@@ -28,9 +36,8 @@ export function ReportPanel({ events, baselineHz, assetName, onAssetNameChange }
     const body: ReportRequest = {
       assetName,
       baselineHz,
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       events: events.map(({ at, sensor, levelDb, hz, deviationPct, amplitudePx, health, note }) => ({
-        at,
+        time: TIME_FORMAT.format(at),
         sensor,
         levelDb,
         hz,
