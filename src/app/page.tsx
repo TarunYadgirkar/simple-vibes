@@ -10,11 +10,10 @@ import { ReportPanel } from "../components/ReportPanel";
 import { SOUND_BANDS, SoundPanel } from "../components/SoundPanel";
 import { Button, FIELD_CLASS, Panel } from "../components/ui";
 import { useToneListener, type Hum, type Tone } from "../hooks/useToneListener";
-import { TEST_SOURCE, useVibrationMonitor, type Roi } from "../hooks/useVibrationMonitor";
+import { useVibrationMonitor, type Roi } from "../hooks/useVibrationMonitor";
 import type { Axis } from "../lib/dsp/motion";
 import { fetchDiagnosis, LOOKING_NOTE } from "../lib/monitor/diagnose";
 import { classify, deviationPct, initialLog, logReducer, type Reading } from "../lib/monitor/log";
-import { TEST_PATTERN_HZ } from "../lib/sources/testPattern";
 import { sendTelemetry } from "../lib/telemetry";
 
 const DEFAULT_ROI: Roi = { x: 0.35, y: 0.2, w: 0.3, h: 0.6 };
@@ -24,7 +23,7 @@ const FRAME_EVERY_MS = 8000;
 
 export default function Home() {
   const [roi, setRoi] = useState(DEFAULT_ROI);
-  const [axis, setAxis] = useState<Axis>("vertical");
+  const axis: Axis = "vertical";
   const [source, setSource] = useState(DEFAULT_CAMERA);
   const [log, dispatch] = useReducer(logReducer, initialLog);
 
@@ -148,7 +147,6 @@ export default function Home() {
                   {camera.label || "camera"}
                 </option>
               ))}
-              <option value={TEST_SOURCE}>test string, {TEST_PATTERN_HZ} Hz</option>
             </select>
           </label>
           {isRunning || sound.isListening ? (

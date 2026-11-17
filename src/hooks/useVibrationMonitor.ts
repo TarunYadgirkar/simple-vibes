@@ -5,7 +5,6 @@ import { analyzeGrid } from "../lib/dsp/grid";
 import type { Axis } from "../lib/dsp/motion";
 import type { Spectrum } from "../lib/dsp/spectrum";
 import type { Reading } from "../lib/monitor/log";
-import { createTestPattern } from "../lib/sources/testPattern";
 
 export interface Roi {
   x: number;
@@ -21,7 +20,6 @@ export interface MonitorFrame {
 }
 
 export type RunState = "idle" | "starting" | "running" | "error";
-export const TEST_SOURCE = "test";
 
 const GRID_PX = 40;
 const MAX_FRAMES = 96;
@@ -168,27 +166,21 @@ export function useVibrationMonitor({ roi, axis, onReading }: Options) {
 
       let release = () => {};
       try {
-        if (source === TEST_SOURCE) {
-          const pattern = createTestPattern();
-          release = pattern.stop;
-          video.srcObject = pattern.stream;
-        } else {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            audio: false,
-            video: {
-              deviceId: source ? { exact: source } : undefined,
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-              frameRate: { ideal: 60 },
-            },
-          });
-          release = () => stream.getTracks().forEach((track) => track.stop());
-          if (isStale()) return release();
-          video.srcObject = stream;
-          const devices = await navigator.mediaDevices.enumerateDevices();
-          if (isStale()) return release();
-          setCameras(devices.filter((device) => device.kind === "videoinput"));
-        }
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            deviceId: source ? { exact: source } : undefined,
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: { ideal: 60 },
+          },
+        });
+        release = () => stream.getTracks().forEach((track) => track.stop());
+        if (isStale()) return release();
+        video.srcObject = stream;
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        if (isStale()) return release();
+        setCameras(devices.filter((device) => device.kind === "videoinput"));
         await video.play();
       } catch {
         release();

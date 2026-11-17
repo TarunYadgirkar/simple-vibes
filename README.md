@@ -24,7 +24,7 @@ pnpm install
 pnpm dev
 ```
 
-Agent features need `ANTHROPIC_API_KEY` in `.env.local`. The "test string" source draws a string plucked at 7.3 Hz and runs it through the same code as a camera.
+Agent features need `ANTHROPIC_API_KEY` in `.env.local`.
 
 ## Tested
 
