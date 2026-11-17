@@ -10,8 +10,8 @@ type Props = {
 };
 
 const MODELS = {
-  string: { label: "stretched cable, same tension", exponent: 1 },
-  strip: { label: "strip clamped at one end", exponent: 2 },
+  string: { label: "cable (f ∝ 1/L)", exponent: 1 },
+  strip: { label: "clamped strip (f ∝ 1/L²)", exponent: 2 },
 } as const;
 
 type ModelId = keyof typeof MODELS;
@@ -30,11 +30,7 @@ export function PhysicsCheck({ baseline, last }: Props) {
   const error = predicted && last ? ((last.hz - predicted) / predicted) * 100 : null;
 
   return (
-    <Panel title="check against theory">
-      <p className="max-w-[65ch] text-ink-muted">
-        Change the free length and the frequency should move by a known amount. Enter both lengths to
-        compare the prediction with what the camera reads.
-      </p>
+    <Panel title="theory check">
       <div className="grid grid-cols-3 items-end gap-3">
         <label className="flex flex-col text-ink-muted">
           object
@@ -47,19 +43,19 @@ export function PhysicsCheck({ baseline, last }: Props) {
           </select>
         </label>
         <label className="flex flex-col text-ink-muted">
-          baseline length (cm)
+          length at baseline (cm)
           <input inputMode="decimal" value={baseLength} onChange={(event) => setBaseLength(event.target.value)} className={INPUT_CLASS} />
         </label>
         <label className="flex flex-col text-ink-muted">
-          new length (cm)
+          length now (cm)
           <input inputMode="decimal" value={newLength} onChange={(event) => setNewLength(event.target.value)} className={INPUT_CLASS} />
         </label>
       </div>
       <p className="tabular-nums">
         {predicted === null
-          ? "Save a baseline first."
-          : `Predicted ${formatHz(predicted)} Hz, measured ${last ? formatHz(last.hz) : "n/a"} Hz${
-              error === null ? "" : `, off by ${Math.abs(error).toFixed(1)}%`
+          ? "set a baseline first"
+          : `predicted ${formatHz(predicted)} Hz, measured ${last ? formatHz(last.hz) : "n/a"} Hz${
+              error === null ? "" : `, off ${Math.abs(error).toFixed(1)}%`
             }`}
       </p>
     </Panel>

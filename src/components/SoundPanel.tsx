@@ -14,7 +14,7 @@ type Props = {
 };
 
 export const SOUND_BANDS = [
-  { minHz: 80, label: "all sound, 80 Hz and up" },
+  { minHz: 80, label: "80 Hz and up" },
   { minHz: 2000, label: "above 2,000 Hz" },
   { minHz: 10000, label: "above 10,000 Hz" },
 ] as const;
@@ -25,18 +25,18 @@ const HZ_FORMAT = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 export function SoundPanel({ isListening, frame, lastTone, error, minHz, onMinHzChange, onStart, onStop }: Props) {
   const shown = frame.tone ?? lastTone;
   const caption = !isListening
-    ? "microphone is off"
+    ? "mic off"
     : frame.tone
-      ? "hearing a steady tone now"
-      : "listening: no steady tone in this band";
+      ? "tone detected"
+      : "listening";
 
   return (
     <Panel
-      title="sound (microphone)"
+      title="sound"
       action={
         <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
           <label className="flex items-baseline gap-2 text-ink-muted">
-            listen to
+            band
             <select value={minHz} onChange={(event) => onMinHzChange(Number(event.target.value))} className={FIELD_CLASS}>
               {SOUND_BANDS.map((band) => (
                 <option key={band.minHz} value={band.minHz}>
@@ -46,7 +46,7 @@ export function SoundPanel({ isListening, frame, lastTone, error, minHz, onMinHz
             </select>
           </label>
           {isListening ? (
-            <Button onClick={onStop}>stop listening</Button>
+            <Button onClick={onStop}>stop</Button>
           ) : (
             <Button variant="primary" onClick={onStart}>
               listen
@@ -72,15 +72,15 @@ export function SoundPanel({ isListening, frame, lastTone, error, minHz, onMinHz
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 text-lg tabular-nums">
             <dt className="text-ink-muted">level</dt>
             <dd>{shown ? `${shown.levelDb.toFixed(0)} dB` : "n/a"}</dd>
-            <dt className="text-ink-muted">above the noise</dt>
+            <dt className="text-ink-muted">above noise</dt>
             <dd>{shown ? `${shown.snrDb.toFixed(0)} dB` : "n/a"}</dd>
-            <dt className="text-ink-muted">human hearing</dt>
+            <dt className="text-ink-muted">to people</dt>
             <dd>
               {!shown
                 ? "n/a"
                 : shown.hz >= HARD_TO_HEAR_HZ
-                  ? "faint or silent to most adults"
-                  : "clearly audible range"}
+                  ? "inaudible to most adults"
+                  : "audible"}
             </dd>
           </dl>
         </div>

@@ -13,7 +13,7 @@ export function EventLog({ events }: { events: LoggedEvent[] }) {
   if (events.length === 0) {
     return (
       <p className="text-ink-muted">
-        Every vibration the camera reads and every tone the microphone hears is logged here with its frequency.
+        no readings yet
       </p>
     );
   }

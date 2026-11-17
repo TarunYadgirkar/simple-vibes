@@ -58,10 +58,10 @@ export function ReportPanel({ events, baselineHz, assetName, onAssetNameChange }
   };
 
   return (
-    <Panel title="morning report">
+    <Panel title="report">
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col text-ink-muted">
-          what the camera is watching
+          watching
           <input
             value={assetName}
             maxLength={80}
@@ -74,14 +74,9 @@ export function ReportPanel({ events, baselineHz, assetName, onAssetNameChange }
           onClick={() => void handleWrite()}
           disabled={events.length === 0 || assetName.trim() === "" || state.status === "writing"}
         >
-          {state.status === "writing" ? "writing report" : "write report from the log"}
+          {state.status === "writing" ? "writing" : "write report"}
         </Button>
       </div>
-      {state.status === "idle" && (
-        <p className="max-w-[65ch] text-ink-muted">
-          The agent reads the whole watch log and writes what changed, when, and what to inspect first.
-        </p>
-      )}
       {state.status === "failed" && (
         <p role="alert" className="text-crit">
           {state.message}

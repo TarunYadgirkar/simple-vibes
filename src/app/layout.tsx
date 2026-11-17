@@ -10,7 +10,7 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "Simple Vibes",
-  description: "Reads vibration frequency from an ordinary camera and flags drift from a healthy baseline.",
+  description: "Vibration frequency from a webcam and a mic.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

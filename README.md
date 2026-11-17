@@ -1,52 +1,42 @@
 # Simple Vibes
 
-Simple Vibes reads how fast something vibrates using an ordinary webcam and a microphone, and flags when that frequency moves away from a healthy baseline. An agent then looks at the camera frame, says what changed, and writes a report from everything logged while nobody was watching.
+Reads vibration frequency from a webcam and a microphone. Flags when it drifts from a baseline. An agent looks at the frame and says what changed.
 
 Live: https://simple-vibes.vercel.app
 
-Built at Agents after Dark (UC Berkeley, November 2026) for the computer vision track.
-
-## Why it exists
-
-A part that is loosening, cracking or carrying extra mass vibrates at a different frequency than it did when it was healthy. Measuring that normally means a contact sensor on every part. A camera pointed at the part can do the same job from a distance, with hardware people already own.
+Built at Agents after Dark, UC Berkeley, Nov 2026. Computer vision track.
 
 ## How it works
 
-1. **Track.** You drag a box around the part. Each frame, the box is collapsed to a one-dimensional profile of brightness edges, and that profile is matched against a reference to find how far the part moved, to a fraction of a pixel.
-2. **Find the frequency.** The last 2.5 seconds of movement are detrended, windowed and run through a Fourier transform. The strongest peak is the vibration frequency. A reading only counts when the peak stands well clear of the noise.
-3. **Compare.** You save one reading as the healthy baseline. Later readings within 5% are healthy, 5% to 15% are drifting, and beyond 15% is a fault.
-4. **Look.** When a reading drifts, the agent receives the baseline photo and the current photo and writes what visibly changed.
-5. **Listen.** The microphone runs through the same idea for sound, up to 24,000 Hz, including tones most adults cannot hear.
-6. **Report.** The agent turns the whole log into a short maintenance report.
+1. Drag a box around the part. Each frame, the box becomes a 1D profile of brightness edges. Cross-correlating it against a reference gives the displacement to a fraction of a pixel.
+2. The last 2.5 s of displacement is detrended, windowed and Fourier transformed. The strongest peak is the frequency. Peaks that don't clear the noise floor are dropped.
+3. One reading is saved as the baseline. Within 5% is healthy, 5 to 15% is drifting, past 15% is a fault.
+4. On drift, Claude gets the baseline photo and the current photo and writes what changed.
+5. The mic does the same for sound up to 24 kHz.
+6. Claude writes a report from the log.
 
-A webcam delivering 30 frames per second can read vibrations up to 15 Hz. The page shows the limit for the camera in use.
+A 30 fps webcam reads up to 15 Hz.
 
-## Run it
+## Run
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Open http://localhost:3000. The camera and microphone work without any setup. The agent features need an Anthropic API key in `.env.local`:
+Agent features need `ANTHROPIC_API_KEY` in `.env.local`. The "test string" source draws a string plucked at 7.3 Hz and runs it through the same code as a camera.
 
-```
-ANTHROPIC_API_KEY=your-key
-```
+## Tested
 
-To check the pipeline without a camera, choose the "test string" source. It draws a string plucked at 7.3 Hz and runs it through the same code as a real camera.
-
-## What is verified
-
-On synthetic frames of a vibrating line at 3.1, 7.3, 9.0 and 12.4 Hz, the tracker and spectrum code recover the frequency to within 0.01 Hz, including a movement of 0.3 pixels, and report nothing on noise alone.
+Synthetic frames of a line vibrating at 3.1, 7.3, 9.0 and 12.4 Hz: frequency recovered within 0.01 Hz, down to 0.3 px of movement. Nothing reported on noise alone.
 
 ## Limits
 
-- Movement must be along one axis inside the box (up and down, or side to side).
-- The camera must be still. Camera shake reads as vibration.
-- Fast machinery needs a higher frame rate than a webcam provides.
-- This is a one-night prototype. It has not been tested on real industrial equipment.
+- Motion along one axis only.
+- The camera has to be still.
+- Fast machinery needs more frames per second than a webcam gives.
+- One-night prototype. Not tested on industrial equipment.
 
 ## Stack
 
-Next.js, TypeScript and Tailwind. All tracking and signal processing runs in the browser. Claude writes the agent notes and the report.
+Next.js, TypeScript, Tailwind. Tracking and signal processing run in the browser.

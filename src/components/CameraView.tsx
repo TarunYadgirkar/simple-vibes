@@ -75,7 +75,7 @@ export function CameraView({ videoRef, roi, onRoiChange, isRunning }: Props) {
       />
       {!isRunning && (
         <p className="absolute inset-0 grid place-items-center px-6 text-center text-sm text-white/70">
-          press start, then drag a box around the part that moves
+          start, then drag a box around the moving part
         </p>
       )}
       {isRunning && <div

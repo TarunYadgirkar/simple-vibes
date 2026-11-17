@@ -116,9 +116,7 @@ export default function Home() {
       <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <div>
           <h1 className="text-2xl font-medium">simple vibes</h1>
-          <p className="text-ink-muted">
-            Reads how fast something vibrates from an ordinary camera, and flags when that changes.
-          </p>
+          <p className="text-ink-muted">vibration frequency from a webcam and a mic</p>
         </div>
         <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
           <label className="flex items-baseline gap-2 text-ink-muted">
@@ -174,7 +172,7 @@ export default function Home() {
               sendTelemetry("event", { what: "baseline saved", hz: log.last?.hz ?? null });
             }}
           />
-          <Panel title="frequency spectrum (Hz)">
+          <Panel title="spectrum (Hz)">
             <SpectrumChart
               spectrum={frame.spectrum}
               baselineHz={log.baseline?.hz ?? null}
@@ -182,8 +180,8 @@ export default function Home() {
             />
             <p className="text-ink-muted">
               {frame.spectrum
-                ? `Camera is delivering ${frame.spectrum.sampleRate.toFixed(0)} frames per second, so it can read up to ${(frame.spectrum.sampleRate / 2).toFixed(0)} Hz.`
-                : "The dashed line marks the healthy baseline once you save one."}
+                ? `camera at ${frame.spectrum.sampleRate.toFixed(0)} fps, reads up to ${(frame.spectrum.sampleRate / 2).toFixed(0)} Hz`
+                : "dashed line = baseline"}
             </p>
           </Panel>
         </div>
@@ -204,7 +202,7 @@ export default function Home() {
         title="watch log"
         action={
           <Button onClick={() => dispatch({ type: "clear" })} disabled={log.events.length === 0}>
-            clear log and baseline
+            clear
           </Button>
         }
       >
