@@ -27,6 +27,7 @@ export function ReportPanel({ events, baselineHz }: Props) {
     const body: ReportRequest = {
       assetName,
       baselineHz,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       events: events.map(({ at, hz, deviationPct, amplitudePx, health }) => ({
         at,
         hz,
