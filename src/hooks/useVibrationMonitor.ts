@@ -161,15 +161,19 @@ export function useVibrationMonitor({ roi, axis, onReading }: Options) {
     setFrame({ wave: spectrum?.detrended ?? [], spectrum, live });
   }, []);
 
+  const resetMeasurement = useCallback(() => {
+    engine.current = freshEngine();
+    setFrame(EMPTY_FRAME);
+  }, []);
+
   const stop = useCallback(() => {
     session.current += 1;
     stopSource.current();
     stopSource.current = () => {};
     if (videoRef.current) videoRef.current.srcObject = null;
-    engine.current = freshEngine();
-    setFrame(EMPTY_FRAME);
+    resetMeasurement();
     setRunState("idle");
-  }, []);
+  }, [resetMeasurement]);
 
   const start = useCallback(
     async (source: string) => {
@@ -249,5 +253,5 @@ export function useVibrationMonitor({ roi, axis, onReading }: Options) {
     [],
   );
 
-  return { videoRef, frame, runState, error, cameras, start, stop, captureFrame };
+  return { videoRef, frame, runState, error, cameras, start, stop, resetMeasurement, captureFrame };
 }

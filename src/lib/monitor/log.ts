@@ -31,8 +31,9 @@ export type LogAction =
   | { type: "reading"; reading: Reading; note: string | null }
   | { type: "tone"; hz: number; levelDb: number; snrDb: number; at: number }
   | { type: "hum"; id: number; hz: number; harmonics: number }
-  | { type: "note"; id: number; note: string }
-  | { type: "setBaseline"; image: string | null }
+  | { type: "note"; kind: "vibration" | "hum"; id: number; note: string }
+  | { type: "setBaseline"; reading: Reading; image: string | null }
+  | { type: "resetMeasurement" }
   | { type: "clear" };
 
 export const DRIFT_PCT = 5;
@@ -61,14 +62,17 @@ export function classify(deviation: number | null): Health {
 
 export function logReducer(state: LogState, action: LogAction): LogState {
   if (action.type === "clear") return initialLog;
+  if (action.type === "resetMeasurement") {
+    return { ...state, baseline: null, baselineImage: null, last: null };
+  }
   if (action.type === "setBaseline") {
-    return { ...state, baseline: state.last, baselineImage: action.image };
+    return { ...state, baseline: action.reading, baselineImage: action.image };
   }
   if (action.type === "note") {
     return {
       ...state,
       events: state.events.map((event) =>
-        event.id === action.id ? { ...event, note: action.note } : event,
+        event.kind === action.kind && event.id === action.id ? { ...event, note: action.note } : event,
       ),
     };
   }

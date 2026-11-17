@@ -37,7 +37,7 @@ export function Readout({ live, last, baseline, onSetBaseline }: Props) {
         <dt className="text-ink-muted">movement</dt>
         <dd>{shown ? `${shown.amplitudePx.toFixed(1)} px` : "n/a"}</dd>
       </dl>
-      <Button onClick={onSetBaseline} disabled={!last} className="self-start">
+      <Button onClick={onSetBaseline} disabled={!live} className="self-start">
         set baseline
       </Button>
     </section>

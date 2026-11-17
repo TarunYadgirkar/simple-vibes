@@ -31,6 +31,7 @@ export default function Home() {
   const [assetName, setAssetName] = useState("Test cable");
   const context = useRef({ log, assetName, capture: (): string | null => null });
   const lastHealth = useRef<string>("unknown");
+  const diagnosisEpoch = useRef(0);
 
   const handleReading = useCallback((reading: Reading) => {
     const { log: current, assetName: name, capture } = context.current;
@@ -44,6 +45,7 @@ export default function Home() {
     sendTelemetry("event", { what: "camera reading", ...reading, deviation, health });
     if (!frameNow || !current.baseline || !current.baselineImage || deviation === null) return;
 
+    const epoch = diagnosisEpoch.current;
     void fetchDiagnosis({
       assetName: name.trim() || "Watched part",
       baselineHz: current.baseline.hz,
@@ -52,7 +54,8 @@ export default function Home() {
       baselineImage: current.baselineImage,
       currentImage: frameNow,
     }).then((note) => {
-      dispatch({ type: "note", id: reading.at, note });
+      if (epoch !== diagnosisEpoch.current) return;
+      dispatch({ type: "note", kind: "vibration", id: reading.at, note });
       sendTelemetry("event", { what: "agent note", at: reading.at, note });
     });
   }, []);
@@ -69,7 +72,7 @@ export default function Home() {
     sendTelemetry("event", { what: "hum started", ...hum });
   }, []);
   const handleHumEnd = useCallback((id: number, seconds: number) => {
-    dispatch({ type: "note", id, note: `steady hum, lasted ${seconds.toFixed(0)} s` });
+    dispatch({ type: "note", kind: "hum", id, note: `steady hum, lasted ${seconds.toFixed(0)} s` });
     sendTelemetry("event", { what: "hum ended", id, seconds });
   }, []);
   const sound = useToneListener({ minHz, onTone: handleTone, onHumStart: handleHumStart, onHumEnd: handleHumEnd });
@@ -117,9 +120,40 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [isRunning, captureFrame]);
 
+  const resetMeasurement = () => {
+    lastHealth.current = "unknown";
+    dispatch({ type: "resetMeasurement" });
+    context.current = {
+      ...context.current,
+      log: { ...context.current.log, baseline: null, baselineImage: null, last: null },
+    };
+    monitor.resetMeasurement();
+  };
+
   const handleSourceChange = (next: string) => {
+    if (next === source) return;
+    resetMeasurement();
     setSource(next);
     if (monitor.runState !== "idle") void monitor.start(next);
+  };
+
+  const handleRoiChange = (next: Roi) => {
+    resetMeasurement();
+    setRoi(next);
+  };
+
+  const handleAxisChange = (next: Axis) => {
+    if (next === axis) return;
+    resetMeasurement();
+    setAxis(next);
+  };
+
+  const handleClear = () => {
+    diagnosisEpoch.current += 1;
+    lastHealth.current = "unknown";
+    context.current = { ...context.current, log: initialLog };
+    monitor.resetMeasurement();
+    dispatch({ type: "clear" });
   };
 
   return (
@@ -144,7 +178,7 @@ export default function Home() {
           </label>
           <label className="flex items-baseline gap-2 text-ink-muted">
             motion
-            <select value={axis} onChange={(event) => setAxis(event.target.value as Axis)} className={FIELD_CLASS}>
+            <select value={axis} onChange={(event) => handleAxisChange(event.target.value as Axis)} className={FIELD_CLASS}>
               <option value="vertical">up and down</option>
               <option value="horizontal">side to side</option>
             </select>
@@ -168,7 +202,7 @@ export default function Home() {
       <div className="grid gap-x-10 gap-y-6 lg:grid-cols-2">
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <CameraView videoRef={monitor.videoRef} roi={roi} onRoiChange={setRoi} isRunning={isRunning} />
+            <CameraView videoRef={monitor.videoRef} roi={roi} onRoiChange={handleRoiChange} isRunning={isRunning} />
             <WaveChart wave={frame.wave} />
           </div>
           <PhysicsCheck baseline={log.baseline} last={log.last} />
@@ -179,8 +213,15 @@ export default function Home() {
             last={log.last}
             baseline={log.baseline}
             onSetBaseline={() => {
-              dispatch({ type: "setBaseline", image: captureFrame() });
-              sendTelemetry("event", { what: "baseline saved", hz: log.last?.hz ?? null });
+              if (!frame.live) return;
+              const image = captureFrame();
+              dispatch({ type: "setBaseline", reading: frame.live, image });
+              context.current = {
+                ...context.current,
+                log: { ...context.current.log, baseline: frame.live, baselineImage: image },
+              };
+              lastHealth.current = "healthy";
+              sendTelemetry("event", { what: "baseline saved", hz: frame.live.hz });
             }}
           />
           <Panel title="spectrum (Hz)">
@@ -212,7 +253,7 @@ export default function Home() {
       <Panel
         title="watch log"
         action={
-          <Button onClick={() => dispatch({ type: "clear" })} disabled={log.events.length === 0}>
+          <Button onClick={handleClear} disabled={log.events.length === 0}>
             clear
           </Button>
         }

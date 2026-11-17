@@ -33,7 +33,7 @@ export function EventLog({ events }: { events: LoggedEvent[] }) {
         </thead>
         <tbody>
           {events.map((event) => (
-            <Fragment key={event.id}>
+            <Fragment key={`${event.kind}-${event.id}`}>
             <tr className="border-t border-line">
               <td className="py-1.5 pr-4">{TIME_FORMAT.format(event.at)}</td>
               <td className="py-1.5 pr-4">{event.sensor}</td>
